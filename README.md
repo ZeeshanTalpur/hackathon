@@ -41,6 +41,39 @@ Created by `scripts/seed-auth.mjs`, one per role, password `demo-transit-2026`:
 `passenger@karachitransit.demo`, `driver@karachitransit.demo`,
 `operator@karachitransit.demo`, `admin@karachitransit.demo`.
 
+## Demo script
+
+The golden path, in the order it is meant to be shown:
+
+1. **Passenger** — open `/`, pick an origin and destination on the same route, search. Matching
+   routes appear with their live and not-yet-departed buses.
+2. **Driver** — open `/driver` in a second window, sign in as the driver demo account, pick the
+   assigned trip, press **Start trip**, then **Start simulated GPS**.
+3. **Passenger** — back on `/`, the bus now shows as live. Press **Track live**. The marker moves
+   along the route, the next stop advances and the ETA counts down.
+4. **Delay** — on the driver screen press **12 min**. The passenger view switches to Delayed and
+   every downstream ETA absorbs the delay.
+5. **GPS loss** — press **Stop simulation** and wait three minutes, or set the speed slider to
+   0 km/h for an immediate Stopped state. After three minutes without a fix the passenger sees
+   "Location temporarily unavailable" rather than a stale position presented as live.
+6. **Operator** — `/operator` shows the running trips, who is driving, where they are and how late.
+7. **End** — press **End trip**. The trip becomes Completed and is no longer tracked as live.
+
+Simulated movement is deterministic: each tick advances the bus `speed x time` kilometres and the
+position is interpolated along the configured stops, so the same inputs always produce the same
+run. Re-run `supabase/seed.sql` to reset the schedule between demos.
+
+## Routes
+
+| Route | Purpose |
+| --- | --- |
+| `/` | Passenger search: origin, destination, matching routes, available buses |
+| `/track/[tripId]` | Live tracking: map, stops, next stop, ETA, status, delay |
+| `/driver` | Driver console: assigned trip, start/end, simulated or device GPS, delay |
+| `/operator` | Minimum operator visibility over running trips |
+| `/api/trip-control` | Trip state changes (server-side, service role) |
+| `/api/health` | Reports which part of the configuration is missing |
+
 ## Validation
 
 ```bash

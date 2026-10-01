@@ -324,6 +324,78 @@ export type RouteSummary = {
   delayed_trip_count: number;
 };
 
+/**
+ * v_trip_live - per-trip state for ANY status, with one derived
+ * `operational_state` for the UI to switch on. Used by the tracking screen,
+ * which must keep working after the driver ends the trip.
+ */
+export type OperationalState =
+  | 'SCHEDULED'
+  | 'ON_TIME'
+  | 'DELAYED'
+  | 'STOPPED'
+  | 'GPS_UNAVAILABLE'
+  | 'COMPLETED'
+  | 'CANCELLED';
+
+export type TripLive = {
+  trip_id: string;
+  trip_code: string;
+  status: TripStatus;
+  direction: TripDirection;
+  service_date: string;
+  scheduled_start_at: string;
+  scheduled_end_at: string;
+  actual_start_at: string | null;
+  actual_end_at: string | null;
+  delay_minutes: number;
+  is_delayed: boolean;
+  progress_km: number;
+  last_stop_order: number | null;
+  occupancy: number;
+  route_id: string;
+  route_code: string;
+  route_name: string;
+  route_color: string;
+  route_distance_km: number;
+  expected_duration_min: number;
+  avg_speed_kmh: number;
+  fare_pkr: number;
+  progress_pct: number;
+  bus_id: string;
+  registration_no: string;
+  bus_label: string | null;
+  capacity: number;
+  bus_status: BusStatus;
+  driver_id: string | null;
+  driver_name: string | null;
+  next_stop_id: string | null;
+  next_stop_name: string | null;
+  next_stop_latitude: number | null;
+  next_stop_longitude: number | null;
+  latitude: number | null;
+  longitude: number | null;
+  speed_kmh: number | null;
+  heading_deg: number | null;
+  location_recorded_at: string | null;
+  location_source: LocationSource | null;
+  location_age_minutes: number | null;
+  gps_status: GpsStatus;
+  operational_state: OperationalState;
+};
+
+/** fn_route_path - ordered stops used as the map polyline. */
+export type RoutePathStop = {
+  stop_order: number;
+  stop_id: string;
+  stop_code: string;
+  stop_name: string;
+  latitude: number;
+  longitude: number;
+  distance_from_start_km: number;
+  is_major_stop: boolean;
+};
+
 export type BusLatestLocation = {
   bus_id: string;
   trip_id: string | null;
@@ -432,8 +504,33 @@ export type Database = {
       v_fleet_overview: View<FleetOverview>;
       v_route_summary: View<RouteSummary>;
       v_bus_latest_location: View<BusLatestLocation>;
+      v_trip_live: View<TripLive>;
     };
     Functions: {
+      fn_route_path: {
+        Args: { p_route_id: string; p_direction?: TripDirection };
+        Returns: RoutePathStop[];
+      };
+      fn_start_trip: { Args: { p_trip_id: string }; Returns: string };
+      fn_end_trip: { Args: { p_trip_id: string }; Returns: string };
+      fn_advance_trip: {
+        Args: { p_trip_id: string; p_tick_seconds?: number; p_speed_kmh?: number };
+        Returns: string;
+      };
+      fn_record_trip_location: {
+        Args: {
+          p_trip_id: string;
+          p_latitude: number;
+          p_longitude: number;
+          p_speed_kmh?: number;
+          p_heading_deg?: number;
+        };
+        Returns: string;
+      };
+      fn_set_trip_delay: {
+        Args: { p_trip_id: string; p_delay_minutes: number };
+        Returns: string;
+      };
       fn_search_routes: {
         Args: { p_origin_stop_id: string; p_destination_stop_id: string };
         Returns: RouteSearchResult[];

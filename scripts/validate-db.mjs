@@ -24,6 +24,7 @@ const SQL_FILES = [
   'supabase/migrations/20261001120200_rls_policies.sql',
   'supabase/migrations/20261001130000_gps_freshness.sql',
   'supabase/migrations/20261001140000_auth_and_realtime.sql',
+  'supabase/migrations/20261001150000_trip_control.sql',
   'supabase/seed.sql',
 ];
 
@@ -98,7 +99,7 @@ check('10 base tables', tables.n === 10, `got ${tables.n}`);
 
 const views = await one(`
   select count(*)::int as n from information_schema.views where table_schema = 'public'`);
-check('6 views', views.n === 6, `got ${views.n}`);
+check('7 views', views.n === 7, `got ${views.n}`);
 
 const enums = await one(`
   select count(*)::int as n from pg_type t
@@ -514,6 +515,208 @@ if (gs) {
   check('interpolated ladder distance increases monotonically',
     gs.example_route_walk.interpolated_every_2km.every((p, i, a) => i === 0 || p.km > a[i - 1].km));
 }
+
+// ---------------------------------------------------------------------------
+// Trip lifecycle: drives the golden path through the SQL layer so the driver
+// controls, the simulator and the derived states are exercised for real.
+// ---------------------------------------------------------------------------
+console.log('\nTrip lifecycle and simulation');
+
+const scheduled = await one(`
+  select t.id, t.trip_code, t.bus_id, r.distance_km
+  from public.trips t
+  join public.routes r on r.id = t.route_id
+  where t.status = 'scheduled'
+  order by t.scheduled_start_at
+  limit 1`);
+
+check('a scheduled trip exists to start', Boolean(scheduled?.id));
+
+if (scheduled?.id) {
+  const tripId = scheduled.id;
+
+  async function liveRow(id) {
+    return one(`select * from public.v_trip_live where trip_id = $1`, [id]);
+  }
+
+  check('scheduled trip reports SCHEDULED',
+    (await liveRow(tripId)).operational_state === 'SCHEDULED');
+
+  // Cannot advance a trip that has not started.
+  let rejected = false;
+  try {
+    await db.query(`select public.fn_advance_trip($1, 5, 20)`, [tripId]);
+  } catch {
+    rejected = true;
+  }
+  check('cannot advance a trip that is not in progress', rejected);
+
+  // Cannot end a trip that is not active.
+  rejected = false;
+  try {
+    await db.query(`select public.fn_end_trip($1)`, [tripId]);
+  } catch {
+    rejected = true;
+  }
+  check('cannot end a trip that is not in progress', rejected);
+
+  await db.query(`select public.fn_start_trip($1)`, [tripId]);
+  const started = await liveRow(tripId);
+  check('start_trip moves the trip to in_progress', started.status === 'in_progress');
+  check('start_trip emits an opening GPS fix', started.latitude !== null);
+  check('start_trip sets the bus active', started.bus_status === 'active');
+  check('a just-started stationary bus reads STOPPED', started.operational_state === 'STOPPED');
+
+  // A second concurrent trip on the same bus must be refused.
+  const sameBus = await one(`
+    select id from public.trips
+    where bus_id = $1 and status = 'scheduled' and id <> $2 limit 1`,
+    [scheduled.bus_id, tripId]);
+  if (sameBus?.id) {
+    rejected = false;
+    try {
+      await db.query(`select public.fn_start_trip($1)`, [sameBus.id]);
+    } catch {
+      rejected = true;
+    }
+    check('refuses a second concurrent trip for the same bus', rejected);
+  }
+
+  // Simulate movement: 12 ticks of 60s at 30 km/h = 6 km of progress.
+  const before = await liveRow(tripId);
+  for (let i = 0; i < 12; i += 1) {
+    await db.query(`select public.fn_advance_trip($1, 60, 30)`, [tripId]);
+  }
+  const moved = await liveRow(tripId);
+
+  check('simulation increases progress_km',
+    Number(moved.progress_km) > Number(before.progress_km),
+    `${before.progress_km} -> ${moved.progress_km}`);
+  check('simulation moves the coordinates',
+    moved.latitude !== before.latitude || moved.longitude !== before.longitude);
+  check('simulated progress matches speed x time',
+    Math.abs(Number(moved.progress_km) - 6) < 0.01, `got ${moved.progress_km}`);
+  check('simulated position stays inside Karachi',
+    Number(moved.latitude) >= 24.6 && Number(moved.latitude) <= 25.2
+      && Number(moved.longitude) >= 66.8 && Number(moved.longitude) <= 67.4);
+  check('moving bus with a fresh fix reads ON_TIME', moved.operational_state === 'ON_TIME');
+  check('next stop advances with progress', moved.next_stop_id !== null);
+  check('reported speed is the simulated speed', Number(moved.speed_kmh) === 30);
+
+  const arrivals = await one(`
+    select count(*)::int as n from public.trip_stop_times
+    where trip_id = $1 and status = 'arrived'`, [tripId]);
+  check('passed stops are stamped as arrived', arrivals.n > 0, `${arrivals.n} arrived`);
+
+  // ETA must exist, be ordered by distance and respond to delay.
+  const etas = await db.query(`
+    select stop_order, eta_minutes, projected_delay_minutes
+    from public.v_trip_stop_eta where trip_id = $1 order by stop_order`, [tripId]);
+  check('ETA is produced for upcoming stops', etas.rows.length > 0);
+  check('ETA increases with distance along the route',
+    etas.rows.every((r, i, a) => i === 0 || Number(r.eta_minutes) >= Number(a[i - 1].eta_minutes)));
+
+  await db.query(`select public.fn_set_trip_delay($1, 12)`, [tripId]);
+  const delayed = await liveRow(tripId);
+  check('delay is recorded on the trip', Number(delayed.delay_minutes) === 12);
+  check('delayed trip reports DELAYED', delayed.operational_state === 'DELAYED');
+  check('delayed trip is flagged is_delayed', delayed.is_delayed === true);
+
+  const delayedEta = await db.query(`
+    select projected_delay_minutes from public.v_trip_stop_eta
+    where trip_id = $1 order by stop_order limit 1`, [tripId]);
+  check('ETA projection reflects the delay',
+    delayedEta.rows.length > 0 && Number(delayedEta.rows[0].projected_delay_minutes) !== 0);
+
+  // Halted bus: an explicit zero speed must not be treated as "no value".
+  await db.query(`select public.fn_advance_trip($1, 60, 0)`, [tripId]);
+  const halted = await liveRow(tripId);
+  check('zero speed is honoured rather than defaulted', Number(halted.speed_kmh) === 0);
+  check('halted bus reports STOPPED', halted.operational_state === 'STOPPED');
+
+  // Real-GPS path: snapped to the route, never regresses.
+  const aheadStop = await one(`
+    select s.latitude, s.longitude, rs.distance_from_start_km
+    from public.route_stops rs
+    join public.stops s on s.id = rs.stop_id
+    join public.trips t on t.route_id = rs.route_id and t.direction = rs.direction
+    where t.id = $1 and rs.distance_from_start_km > $2
+    order by rs.stop_order limit 1`, [tripId, halted.progress_km]);
+
+  if (aheadStop) {
+    await db.query(`select public.fn_record_trip_location($1, $2, $3, 25, 90)`,
+      [tripId, aheadStop.latitude, aheadStop.longitude]);
+    const device = await liveRow(tripId);
+    check('device GPS advances progress',
+      Number(device.progress_km) > Number(halted.progress_km));
+    check('device GPS is recorded as a device fix', device.location_source === 'device');
+
+    // Feeding a backwards coordinate must not rewind progress.
+    const origin = await one(`
+      select s.latitude, s.longitude
+      from public.route_stops rs
+      join public.stops s on s.id = rs.stop_id
+      join public.trips t on t.route_id = rs.route_id and t.direction = rs.direction
+      where t.id = $1 order by rs.stop_order limit 1`, [tripId]);
+    await db.query(`select public.fn_record_trip_location($1, $2, $3, 10, 90)`,
+      [tripId, origin.latitude, origin.longitude]);
+    const rewound = await liveRow(tripId);
+    check('progress never goes backwards',
+      Number(rewound.progress_km) >= Number(device.progress_km));
+  }
+
+  let badCoords = false;
+  try {
+    await db.query(`select public.fn_record_trip_location($1, 999, 999, 10, 0)`, [tripId]);
+  } catch {
+    badCoords = true;
+  }
+  check('invalid coordinates are rejected', badCoords);
+
+  await db.query(`select public.fn_end_trip($1)`, [tripId]);
+  const done = await liveRow(tripId);
+  check('end_trip completes the trip', done.status === 'completed');
+  check('completed trip reports COMPLETED', done.operational_state === 'COMPLETED');
+  check('completed trip has no next stop', done.next_stop_id === null);
+  check('completed trip records an end time', done.actual_end_at !== null);
+  check('completed trip releases the bus', done.bus_status === 'idle');
+  check('completed trip has no pending stop times',
+    (await one(`select count(*)::int as n from public.trip_stop_times
+                where trip_id = $1 and status = 'pending'`, [tripId])).n === 0);
+  check('completed trip is excluded from v_active_trips',
+    (await one(`select count(*)::int as n from public.v_active_trips where trip_id = $1`,
+      [tripId])).n === 0);
+
+  // Auto-completion when the simulator reaches the final stop.
+  const another = await one(`
+    select t.id, r.distance_km from public.trips t
+    join public.routes r on r.id = t.route_id
+    where t.status = 'scheduled' order by t.scheduled_start_at limit 1`);
+  if (another?.id) {
+    await db.query(`select public.fn_start_trip($1)`, [another.id]);
+    await db.query(`select public.fn_advance_trip($1, 3600, $2)`,
+      [another.id, Number(another.distance_km) * 2]);
+    const autoDone = await liveRow(another.id);
+    check('simulation auto-completes on reaching the final stop',
+      autoDone.status === 'completed', autoDone.status);
+    check('auto-completed progress equals route distance',
+      Math.abs(Number(autoDone.progress_km) - Number(another.distance_km)) < 0.01);
+  }
+}
+
+console.log('\nMap polyline');
+const pathRoute = await one(`select id from public.routes where is_active limit 1`);
+const polyline = await db.query(
+  `select * from public.fn_route_path($1, 'outbound')`, [pathRoute.id]);
+check('route path returns ordered stops', polyline.rows.length >= 2);
+check('route path is ordered by stop_order',
+  polyline.rows.every((r, i, a) => i === 0 || r.stop_order > a[i - 1].stop_order));
+check('route path distances increase monotonically',
+  polyline.rows.every((r, i, a) => i === 0
+    || Number(r.distance_from_start_km) >= Number(a[i - 1].distance_from_start_km)));
+check('route path coordinates are all valid',
+  polyline.rows.every((r) => Number(r.latitude) >= -90 && Number(r.latitude) <= 90
+    && Number(r.longitude) >= -180 && Number(r.longitude) <= 180));
 
 console.log(`\n${checks - failures.length}/${checks} checks passed`);
 if (failures.length > 0) {
