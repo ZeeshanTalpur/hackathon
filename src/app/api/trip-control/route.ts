@@ -98,11 +98,21 @@ export async function POST(request: Request) {
         break;
       }
       case 'tick': {
-        const { error } = await admin.rpc('fn_advance_trip', {
-          p_trip_id: tripId,
-          p_tick_seconds: numberOr(body.tickSeconds, 5),
-          p_speed_kmh: optionalNumber(body.speedKmh),
-        });
+        // Without an explicit tickSeconds, advance by real elapsed time. That
+        // keeps progress correct when the driver tab is backgrounded and the
+        // browser throttles its timer.
+        const explicit = optionalNumber(body.tickSeconds);
+        const { error } = explicit === undefined
+          ? await admin.rpc('fn_advance_trip_elapsed', {
+              p_trip_id: tripId,
+              p_speed_kmh: optionalNumber(body.speedKmh),
+              p_time_scale: numberOr(body.timeScale, 5),
+            })
+          : await admin.rpc('fn_advance_trip', {
+              p_trip_id: tripId,
+              p_tick_seconds: explicit,
+              p_speed_kmh: optionalNumber(body.speedKmh),
+            });
         if (error) throw new Error(error.message);
         break;
       }

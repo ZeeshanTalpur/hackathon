@@ -7,9 +7,20 @@ import { StatusBadge, formatDelay } from '@/components/trip-status';
 import { EmptyState, ErrorState } from '@/components/app-shell';
 import type { TripLive } from '@/lib/types/database';
 
-/** Simulation cadence. One tick advances the bus speed x TICK_SECONDS / 3600 km. */
+/**
+ * Simulation cadence.
+ *
+ * The server advances the bus by the real time since its last fix multiplied by
+ * TIME_SCALE, rather than by a fixed amount per request. Browsers throttle
+ * timers in background tabs, so a fixed step made the bus crawl whenever the
+ * driver window lost focus; deriving it from the clock makes the pace correct
+ * however irregularly this interval actually fires.
+ *
+ * 5x keeps a 16 km route to a few minutes - fast enough to watch, slow enough
+ * to show the ETA counting down and to report a delay mid-trip.
+ */
 const TICK_MS = 3000;
-const TICK_SECONDS = 60;
+const TIME_SCALE = 5;
 const DEFAULT_SPEED_KMH = 30;
 
 type GpsMode = 'off' | 'simulated' | 'device';
@@ -78,7 +89,7 @@ export function DriverConsole({
 
     const id = setInterval(async () => {
       const updated = await call(
-        { action: 'tick', tickSeconds: TICK_SECONDS, speedKmh: speed },
+        { action: 'tick', speedKmh: speed, timeScale: TIME_SCALE },
         { quiet: true },
       );
       if (updated && updated.status === 'completed') {

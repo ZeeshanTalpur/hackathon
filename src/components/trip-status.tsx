@@ -33,7 +33,15 @@ export function formatEta(minutes: number | null | undefined): string {
   return `${Math.round(minutes)} min`;
 }
 
+/**
+ * Delay wording. Below the 5-minute DELAYED threshold the badge still reads
+ * "On time", so calling that bus "delayed" would contradict it - it is just
+ * running slightly behind.
+ */
 export function formatDelay(minutes: number | null | undefined): string | null {
   if (!minutes || minutes < 1) return null;
-  return `Delayed by ${Math.round(minutes)} min`;
+  const rounded = Math.round(minutes);
+  return rounded < 5
+    ? `Running ${rounded} min behind schedule`
+    : `Delayed by ${rounded} min`;
 }

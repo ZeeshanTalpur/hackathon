@@ -122,10 +122,12 @@ export async function driverTrips(profileId: string | null): Promise<{
     driverId = data?.id ?? null;
   }
 
+  // Completed trips are included so the console does not empty out after a demo
+  // run - the controls disable themselves rather than the trip disappearing.
   const query = supabase
     .from('v_trip_live')
     .select('*')
-    .in('status', ['scheduled', 'in_progress'])
+    .in('status', ['scheduled', 'in_progress', 'completed'])
     .order('status')
     .order('scheduled_start_at');
 

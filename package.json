@@ -10,7 +10,10 @@
     "typecheck": "tsc --noEmit",
     "db:validate": "node scripts/validate-db.mjs",
     "db:export": "node scripts/export-demo-data.mjs",
-    "db:seed-auth": "node scripts/seed-auth.mjs"
+    "db:seed-auth": "node scripts/seed-auth.mjs",
+    "db:apply": "node scripts/apply-sql.mjs",
+    "db:test-realtime": "node scripts/test-realtime.mjs",
+    "db:demo-info": "node scripts/demo-info.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -28,6 +31,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.8",
+    "pg": "^8.23.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
