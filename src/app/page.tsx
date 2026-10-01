@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { StatusBadge, formatDelay } from '@/components/trip-status';
+import { ServiceAlertsBanner } from '@/components/service-alerts-banner';
 import { AppShell, DemoDataNotice, EmptyState, ErrorState } from '@/components/app-shell';
 import {
   SUPABASE_CONFIGURED,
@@ -65,6 +66,10 @@ export default async function Home({ searchParams }: HomeProps) {
 
   return (
     <AppShell title="Find your bus">
+      {/* Live operator alerts: all of them before a search, then only
+          network-wide alerts plus those for the routes found. */}
+      <ServiceAlertsBanner routeIds={searched && !sameStop ? routes.map((r) => r.route_id) : undefined} />
+
       <form className="flex flex-col gap-3 rounded border border-black/15 p-4 dark:border-white/15">
         <label className="flex flex-col gap-1 text-sm">
           <span className="font-medium">From</span>
