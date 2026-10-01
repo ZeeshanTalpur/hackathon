@@ -54,3 +54,15 @@ export async function requireRole(allowed: UserRole[]): Promise<SessionContext> 
 
   return session;
 }
+
+/** Roles allowed on operator screens and operator Server Actions. */
+export const STAFF_ROLES: UserRole[] = ['operator', 'admin'];
+
+/**
+ * Operator/admin gate. Call it in every staff page AND every staff Server
+ * Action: a layout check alone is not enough, because Server Actions can be
+ * invoked directly by POST. Writes are also enforced by RLS (fn_is_staff).
+ */
+export function requireStaff(): Promise<SessionContext> {
+  return requireRole(STAFF_ROLES);
+}
