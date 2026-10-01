@@ -26,6 +26,7 @@ const SQL_FILES = [
   'supabase/migrations/20261001120100_functions_and_views.sql',
   'supabase/migrations/20261001120200_rls_policies.sql',
   'supabase/migrations/20261001130000_gps_freshness.sql',
+  'supabase/migrations/20261001140000_auth_and_realtime.sql',
   'supabase/seed.sql',
 ];
 
