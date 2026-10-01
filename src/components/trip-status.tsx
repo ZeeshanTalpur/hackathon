@@ -1,23 +1,24 @@
 import type { OperationalState } from '@/lib/types/database';
 
-const STATE_STYLE: Record<OperationalState, { label: string; className: string }> = {
-  ON_TIME: { label: 'On time', className: 'bg-green-600/15 text-green-700 dark:text-green-400' },
-  DELAYED: { label: 'Delayed', className: 'bg-amber-600/15 text-amber-700 dark:text-amber-400' },
-  STOPPED: { label: 'Stopped', className: 'bg-slate-600/15 text-slate-700 dark:text-slate-300' },
-  GPS_UNAVAILABLE: {
-    label: 'Location unavailable',
-    className: 'bg-red-600/15 text-red-700 dark:text-red-400',
-  },
-  SCHEDULED: { label: 'Scheduled', className: 'bg-blue-600/15 text-blue-700 dark:text-blue-400' },
-  COMPLETED: { label: 'Completed', className: 'bg-slate-600/15 text-slate-700 dark:text-slate-300' },
-  CANCELLED: { label: 'Cancelled', className: 'bg-red-600/15 text-red-700 dark:text-red-400' },
+const STATE_STYLE: Record<OperationalState, { label: string; className: string; light: string }> = {
+  ON_TIME: { label: 'On time', className: 'bg-emerald-50 text-emerald-800', light: 'bg-emerald-400/15 text-emerald-200' },
+  DELAYED: { label: 'Delayed', className: 'bg-amber-50 text-amber-800', light: 'bg-amber-400/15 text-amber-200' },
+  STOPPED: { label: 'Stopped', className: 'bg-slate-100 text-slate-700', light: 'bg-white/10 text-slate-200' },
+  GPS_UNAVAILABLE: { label: 'No location', className: 'bg-slate-100 text-slate-600', light: 'bg-white/10 text-slate-300' },
+  SCHEDULED: { label: 'Later', className: 'bg-slate-100 text-slate-700', light: 'bg-white/10 text-slate-200' },
+  COMPLETED: { label: 'Arrived', className: 'bg-slate-100 text-slate-600', light: 'bg-white/10 text-slate-300' },
+  CANCELLED: { label: 'Cancelled', className: 'bg-slate-100 text-slate-500', light: 'bg-white/10 text-slate-400' },
 };
 
-export function StatusBadge({ state }: { state: OperationalState }) {
-  const { label, className } = STATE_STYLE[state] ?? STATE_STYLE.SCHEDULED;
+export function StatusBadge({ state, light = false }: { state: OperationalState; light?: boolean }) {
+  const style = STATE_STYLE[state] ?? STATE_STYLE.SCHEDULED;
   return (
-    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${className}`}>
-      {label}
+    <span
+      className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold tracking-wide uppercase ${
+        light ? style.light : style.className
+      }`}
+    >
+      {style.label}
     </span>
   );
 }

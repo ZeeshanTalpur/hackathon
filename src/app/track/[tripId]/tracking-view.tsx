@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { TransitMap } from '@/components/transit-map';
 import { StatusBadge, formatDelay, formatEta } from '@/components/trip-status';
-import { EmptyState, ErrorState } from '@/components/app-shell';
+import { ErrorState } from '@/components/app-shell';
 import { createClient } from '@/lib/supabase/client';
 import type { OperationalState, RoutePathStop, TripLive, TripStopEta } from '@/lib/types/database';
 
@@ -32,7 +32,9 @@ export function TrackingView({
   const [fetchError, setFetchError] = useState<string | null>(null);
   // Re-renders on a timer so a fix that goes stale is detected even when no
   // further events arrive - silence is exactly the case we must catch.
-  const [now, setNow] = useState(() => Date.now());
+  // Null until after hydration. A server timestamp and the browser clock disagree,
+  // and that disagreement was showing up as a different "minutes ago".
+  const [now, setNow] = useState<number | null>(null);
 
   const tripId = initialTrip.trip_id;
   const busId = initialTrip.bus_id;
@@ -93,24 +95,31 @@ export function TrackingView({
   }, [connection, refresh]);
 
   useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 10_000);
+    const tick = () => setNow(Date.now());
+    tick();
+    const id = setInterval(tick, 10_000);
     return () => clearInterval(id);
   }, []);
 
   const fixAt = trip.location_recorded_at ? new Date(trip.location_recorded_at).getTime() : null;
-  const fixAgeMs = fixAt === null ? null : Math.max(now - fixAt, 0);
-  const isStale = fixAgeMs === null || fixAgeMs > STALE_AFTER_MS;
+  const fixAgeMs = fixAt === null || now === null ? null : Math.max(now - fixAt, 0);
+  const isStale = now !== null && (fixAgeMs === null || fixAgeMs > STALE_AFTER_MS);
   const isFinished = trip.status === 'completed' || trip.status === 'cancelled';
 
   // Client-side staleness wins over the server snapshot: the row was accurate
   // when fetched, but time has passed since.
-  const state: OperationalState = isFinished
-    ? trip.operational_state
-    : isStale
-      ? 'GPS_UNAVAILABLE'
-      : trip.operational_state;
+  const state: OperationalState =
+    now === null || isFinished
+      ? trip.operational_state
+      : isStale
+        ? 'GPS_UNAVAILABLE'
+        : trip.operational_state;
 
-  const hasLivePosition = !isStale && trip.latitude !== null && trip.longitude !== null;
+  const hasLivePosition =
+    state !== 'GPS_UNAVAILABLE' &&
+    !isFinished &&
+    trip.latitude !== null &&
+    trip.longitude !== null;
   const upcoming = etas.filter((e) => e.stop_order > (trip.last_stop_order ?? 0));
   const destinationEta = destinationStopId
     ? upcoming.find((e) => e.stop_id === destinationStopId)
@@ -119,75 +128,16 @@ export function TrackingView({
   const delay = formatDelay(trip.delay_minutes);
 
   return (
-    <div className="flex flex-col gap-4">
-      <section className="flex flex-col gap-3 rounded border border-black/15 p-4 dark:border-white/15">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span
-              className="rounded px-2 py-0.5 text-xs font-semibold text-white"
-              style={{ backgroundColor: trip.route_color }}
-            >
-              {trip.route_code}
-            </span>
-            <span className="text-sm font-medium">{trip.registration_no}</span>
-          </div>
-          <StatusBadge state={state} />
-        </div>
-
-        <p className="text-sm opacity-70">{trip.route_name}</p>
-
-        {/* Headline ETA: destination if the passenger picked one, else next stop. */}
-        {isFinished ? (
-          <p className="text-sm font-medium">
-            This trip has {trip.status === 'completed' ? 'completed' : 'been cancelled'}. It is no
-            longer being tracked live.
-          </p>
-        ) : state === 'GPS_UNAVAILABLE' ? (
-          <div className="rounded border border-amber-500/50 bg-amber-500/5 p-3 text-sm">
-            <p className="font-medium">Location temporarily unavailable</p>
-            <p className="opacity-70">
-              {fixAt === null
-                ? 'This bus has not reported a position yet.'
-                : `Last report ${formatAge(fixAgeMs!)} ago. ETA is held until a fresh position arrives.`}
-            </p>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-1">
-            <p className="text-2xl font-semibold">
-              {formatEta(destinationEta?.eta_minutes ?? nextEta?.eta_minutes)}
-            </p>
-            <p className="text-xs opacity-70">
-              {destinationEta
-                ? `to ${destinationEta.stop_name} (your destination)`
-                : nextEta
-                  ? `to ${nextEta.stop_name} (next stop)`
-                  : 'at the final stop'}
-            </p>
-            {delay ? <p className="text-sm text-amber-600">{delay}</p> : null}
-          </div>
-        )}
-
-        <dl className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
-          <Fact label="Next stop" value={trip.next_stop_name ?? '--'} />
-          <Fact label="Progress" value={`${Number(trip.progress_pct).toFixed(0)}%`} />
-          <Fact
-            label="Speed"
-            value={hasLivePosition ? `${Number(trip.speed_kmh ?? 0).toFixed(0)} km/h` : '--'}
-          />
-          <Fact label="Fare" value={`PKR ${trip.fare_pkr}`} />
-        </dl>
-
-        <ConnectionNote connection={connection} fetchError={fetchError} />
-      </section>
-
+    <div className="absolute inset-0">
       <TransitMap
+        fill
         bus={
           trip.latitude !== null && trip.longitude !== null
             ? {
                 latitude: Number(trip.latitude),
                 longitude: Number(trip.longitude),
                 headingDeg: trip.heading_deg === null ? null : Number(trip.heading_deg),
-                label: `${trip.registration_no} (${trip.route_code})`,
+                label: trip.bus_label ?? 'Bus',
                 isLive: hasLivePosition,
               }
             : null
@@ -198,48 +148,95 @@ export function TrackingView({
         routeColor={trip.route_color}
       />
 
-      <section className="flex flex-col gap-2">
-        <h2 className="text-sm font-medium">Upcoming stops</h2>
-        {upcoming.length === 0 ? (
-          <EmptyState
-            title="No upcoming stops"
-            detail={
-              isFinished
-                ? 'The trip has finished its route.'
-                : 'The bus is approaching the final stop.'
-            }
-          />
+      <section className="absolute top-3 left-3 z-10 max-h-[calc(100%-6.5rem)] w-[min(100%-1.5rem,22rem)] overflow-auto rounded-xl bg-[#1b2430] p-4 text-white shadow-xl lg:max-h-[calc(100%-1.5rem)]">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs text-slate-400">{trip.bus_label ?? 'Bus'}</p>
+            <h2 className="text-base font-semibold leading-snug">{trip.route_name}</h2>
+          </div>
+          <StatusBadge state={state} light />
+        </div>
+
+        {trip.status === 'scheduled' ? (
+          <p className="mt-4 text-2xl font-semibold">
+            {new Date(trip.scheduled_start_at).toLocaleTimeString('en-PK', {
+              hour: 'numeric',
+              minute: '2-digit',
+            })}
+            <span className="mt-1 block text-sm font-normal text-slate-300">Has not left yet</span>
+          </p>
+        ) : isFinished ? (
+          <p className="mt-4 text-sm text-slate-200">This bus has finished its run.</p>
+        ) : state === 'GPS_UNAVAILABLE' ? (
+          <p className="mt-4 text-sm text-amber-200">
+            {fixAgeMs === null
+              ? 'Location temporarily unavailable.'
+              : `Location temporarily unavailable. Last report ${formatAge(fixAgeMs)} ago.`}
+          </p>
         ) : (
-          <ol className="flex flex-col divide-y divide-black/10 rounded border border-black/15 dark:divide-white/10 dark:border-white/15">
+          <div className="mt-4">
+            <p className="text-3xl font-semibold tracking-tight">
+              {formatEta(destinationEta?.eta_minutes ?? nextEta?.eta_minutes)}
+            </p>
+            <p className="mt-1 text-sm text-slate-300">
+              {destinationEta
+                ? destinationEta.stop_name
+                : nextEta
+                  ? nextEta.stop_name
+                  : 'Final stop'}
+            </p>
+            {delay ? <p className="mt-2 text-sm text-amber-300">{delay}</p> : null}
+          </div>
+        )}
+
+        <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-white/10 pt-3 text-sm">
+          <div>
+            <dt className="text-xs text-slate-400">Next stop</dt>
+            <dd>{trip.next_stop_name ?? '—'}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-slate-400">Speed</dt>
+            <dd>{hasLivePosition ? `${Number(trip.speed_kmh ?? 0).toFixed(0)} km/h` : '—'}</dd>
+          </div>
+        </dl>
+        <ConnectionNote connection={connection} fetchError={fetchError} />
+      </section>
+
+      <aside className="absolute top-3 right-3 z-10 hidden max-h-[calc(100%-1.5rem)] w-72 overflow-auto rounded-xl bg-white shadow-xl ring-1 ring-slate-200 lg:block">
+        <p className="border-b border-slate-100 px-4 py-3 text-sm font-medium">Stops ahead</p>
+        {upcoming.length === 0 ? (
+          <p className="px-4 py-3 text-sm text-slate-500">
+            {isFinished ? 'The run is finished.' : 'Approaching the last stop.'}
+          </p>
+        ) : (
+          <ol>
             {upcoming.map((stop) => (
               <li
                 key={stop.stop_id}
-                className="flex items-center justify-between gap-3 p-3 text-sm"
+                className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-2.5 text-sm last:border-0"
               >
-                <div className="flex flex-col">
-                  <span className={stop.stop_id === trip.next_stop_id ? 'font-medium' : ''}>
-                    {stop.stop_order}. {stop.stop_name}
-                  </span>
-                  <span className="text-xs opacity-60">
-                    {Number(stop.remaining_km).toFixed(1)} km away
-                    {Number(stop.projected_delay_minutes) >= 1
-                      ? ` - ${Math.round(Number(stop.projected_delay_minutes))} min behind schedule`
-                      : ''}
-                  </span>
-                </div>
-                <span className="shrink-0 text-sm font-medium">
-                  {state === 'GPS_UNAVAILABLE' ? '--' : formatEta(stop.eta_minutes)}
+                <span className={stop.stop_id === trip.next_stop_id ? 'font-medium' : 'text-slate-600'}>
+                  {stop.stop_name}
+                </span>
+                <span className="shrink-0 text-slate-500">
+                  {state === 'GPS_UNAVAILABLE' ? '—' : formatEta(stop.eta_minutes)}
                 </span>
               </li>
             ))}
           </ol>
         )}
-      </section>
+      </aside>
 
-      <p className="text-xs opacity-60">
-        ETA is a deterministic projection from remaining distance, reported speed and recorded
-        delay. It is not a prediction and makes no accuracy claim. DEMO / SIMULATED HACKATHON DATA.
-      </p>
+      <ol className="absolute right-3 bottom-10 left-3 z-10 max-h-32 overflow-auto rounded-xl bg-white shadow-xl ring-1 ring-slate-200 lg:hidden">
+        {upcoming.slice(0, 4).map((stop) => (
+          <li key={stop.stop_id} className="flex justify-between gap-3 px-3 py-1.5 text-sm">
+            <span>{stop.stop_name}</span>
+            <span className="text-slate-500">
+              {state === 'GPS_UNAVAILABLE' ? '—' : formatEta(stop.eta_minutes)}
+            </span>
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }
@@ -256,30 +253,21 @@ function ConnectionNote({
   }
 
   const text: Record<ConnectionState, string> = {
-    connecting: 'Connecting to live updates...',
-    live: 'Live updates connected',
-    polling: 'Realtime unavailable - refreshing every 5 seconds instead',
-    error: 'Realtime disconnected - refreshing every 5 seconds instead',
+    connecting: 'Connecting',
+    live: 'Live',
+    polling: 'Updating',
+    error: 'Reconnecting',
   };
 
   return (
-    <p className="text-xs opacity-60">
+    <p className="mt-3 text-xs text-slate-400">
       <span
-        className={`mr-1.5 inline-block h-2 w-2 rounded-full ${
-          connection === 'live' ? 'bg-green-500' : 'bg-amber-500'
+        className={`mr-1.5 inline-block h-1.5 w-1.5 rounded-full ${
+          connection === 'live' ? 'bg-emerald-400' : 'bg-amber-300'
         }`}
       />
       {text[connection]}
     </p>
-  );
-}
-
-function Fact({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <dt className="opacity-60">{label}</dt>
-      <dd className="font-medium">{value}</dd>
-    </div>
   );
 }
 

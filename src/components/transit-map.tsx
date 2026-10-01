@@ -21,6 +21,7 @@ interface TransitMapProps {
   originStopId?: string | null;
   destinationStopId?: string | null;
   nextStopId?: string | null;
+  fill?: boolean;
 }
 
 const KARACHI_CENTER = { lat: 24.8607, lng: 67.0011 };
@@ -42,7 +43,7 @@ export function TransitMap(props: TransitMapProps) {
 
   return (
     <APIProvider apiKey={apiKey}>
-      <div className="h-64 w-full overflow-hidden rounded border border-black/15 sm:h-96 dark:border-white/15">
+      <div className={props.fill ? 'h-full w-full overflow-hidden' : 'h-72 w-full overflow-hidden rounded-2xl ring-1 ring-slate-200 sm:h-96 md:h-[32rem]'}>
         <Map
           defaultCenter={KARACHI_CENTER}
           defaultZoom={12}

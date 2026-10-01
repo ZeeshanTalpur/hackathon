@@ -19,7 +19,7 @@ export default async function DriverPage() {
     );
   }
 
-  const session = await requireRole(['driver', 'operator', 'admin']);
+  const session = await requireRole(['driver']);
 
   // Data fetching is wrapped, not the JSX: a try/catch cannot catch render
   // errors, so constructing elements inside it would be misleading.
@@ -37,17 +37,22 @@ export default async function DriverPage() {
 
   if (loadError) {
     return (
-      <AppShell title="Driver">
+      <AppShell title="Your run">
         <ErrorState title="Could not load your trips" detail={loadError} />
       </AppShell>
     );
   }
 
   return (
-    <AppShell title="Driver">
-      <p className="text-sm opacity-70">
-        {session.profile?.full_name ?? session.email} - signed in as {session.role}
-      </p>
+    <AppShell title="Your run">
+      <div className="flex items-center justify-between text-sm text-slate-500">
+        <p>{session.profile?.full_name ?? 'Driver'}</p>
+        <form action="/auth/sign-out" method="post">
+          <button className="text-slate-500 underline" type="submit">
+            Sign out
+          </button>
+        </form>
+      </div>
       <DriverConsole initialTrips={trips} linked={linked} />
       <DemoDataNotice />
     </AppShell>

@@ -24,7 +24,7 @@ export default async function TrackPage({ params, searchParams }: TrackPageProps
 
   if (!SUPABASE_CONFIGURED) {
     return (
-      <AppShell title="Live tracking">
+      <AppShell title="Your bus">
         <ErrorState
           title="Supabase is not configured"
           detail="Copy .env.example to .env.local and restart the dev server."
@@ -54,7 +54,7 @@ export default async function TrackPage({ params, searchParams }: TrackPageProps
 
   if (loadError) {
     return (
-      <AppShell title="Live tracking">
+      <AppShell title="Your bus">
         <ErrorState title="Could not load this trip" detail={loadError} />
         <Link className="text-sm underline" href="/">
           Back to search
@@ -65,7 +65,7 @@ export default async function TrackPage({ params, searchParams }: TrackPageProps
 
   if (!trip) {
     return (
-      <AppShell title="Live tracking">
+      <AppShell title="Your bus">
         <ErrorState
           title="Trip not found"
           detail="This trip does not exist. It may have been removed when the demo data was reloaded."
@@ -78,7 +78,7 @@ export default async function TrackPage({ params, searchParams }: TrackPageProps
   }
 
   return (
-    <AppShell title="Live tracking">
+    <AppShell bleed title="Live map">
       <TrackingView
         destinationStopId={destination ?? null}
         initialEtas={etas}

@@ -27,10 +27,9 @@ type GpsMode = 'off' | 'simulated' | 'device';
 
 export function DriverConsole({
   initialTrips,
-  linked,
 }: {
   initialTrips: TripLive[];
-  linked: boolean;
+  linked?: boolean;
 }) {
   const [trips, setTrips] = useState(initialTrips);
   const [selectedId, setSelectedId] = useState<string | null>(
@@ -146,16 +145,10 @@ export function DriverConsole({
 
   return (
     <div className="flex flex-col gap-4">
-      {!linked ? (
-        <p className="rounded border border-black/15 p-3 text-xs opacity-70 dark:border-white/15">
-          This demo account is not linked to a driver record, so every trip is shown.
-        </p>
-      ) : null}
-
       <label className="flex flex-col gap-1 text-sm">
         <span className="font-medium">Assigned trip</span>
         <select
-          className="rounded border border-black/20 bg-transparent px-3 py-2.5 text-sm dark:border-white/20"
+          className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm"
           onChange={(event) => {
             setSelectedId(event.target.value);
             setGpsMode('off');
@@ -166,7 +159,7 @@ export function DriverConsole({
         >
           {trips.map((trip) => (
             <option key={trip.trip_id} value={trip.trip_id}>
-              {trip.trip_code} - {trip.route_code} - {trip.registration_no} ({trip.status})
+              {trip.bus_label ?? 'Bus'} · {trip.route_name}
             </option>
           ))}
         </select>
@@ -174,16 +167,14 @@ export function DriverConsole({
 
       {selected ? (
         <>
-          <section className="flex flex-col gap-3 rounded border border-black/15 p-4 dark:border-white/15">
+          <section className="flex flex-col gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <span
-                  className="rounded px-2 py-0.5 text-xs font-semibold text-white"
+                  className="h-2.5 w-2.5 rounded-full"
                   style={{ backgroundColor: selected.route_color }}
-                >
-                  {selected.route_code}
-                </span>
-                <span className="text-sm font-medium">{selected.registration_no}</span>
+                />
+                <span className="text-sm font-medium">{selected.bus_label ?? 'Bus'}</span>
               </div>
               <StatusBadge state={selected.operational_state} />
             </div>
@@ -191,15 +182,13 @@ export function DriverConsole({
             <p className="text-sm opacity-70">{selected.route_name}</p>
 
             <dl className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
-              <Fact label="Trip" value={selected.trip_code} />
+              <Fact label="Route" value={selected.route_name} />
               <Fact label="Progress" value={`${Number(selected.progress_pct).toFixed(0)}%`} />
               <Fact label="Next stop" value={selected.next_stop_name ?? '--'} />
               <Fact
-                label="Position"
+                label="Speed"
                 value={
-                  selected.latitude !== null && selected.longitude !== null
-                    ? `${Number(selected.latitude).toFixed(4)}, ${Number(selected.longitude).toFixed(4)}`
-                    : 'No fix yet'
+                  selected.speed_kmh === null ? '—' : `${Number(selected.speed_kmh).toFixed(0)} km/h`
                 }
               />
             </dl>
@@ -211,17 +200,17 @@ export function DriverConsole({
 
           {error ? <ErrorState title="Action failed" detail={error} /> : null}
           {notice ? (
-            <p className="rounded border border-black/15 p-3 text-sm dark:border-white/15">
+            <p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
               {notice}
             </p>
           ) : null}
 
-          <section className="flex flex-col gap-3 rounded border border-black/15 p-4 dark:border-white/15">
+          <section className="flex flex-col gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
             <h2 className="text-sm font-medium">Trip controls</h2>
 
             <div className="flex flex-wrap gap-2">
               <button
-                className="flex-1 rounded bg-green-600 px-4 py-3 text-sm font-medium text-white disabled:opacity-40"
+                className="flex-1 rounded-xl bg-[#2563eb] px-4 py-3 text-sm font-medium text-white disabled:opacity-40"
                 disabled={busy || isActive || selected.status === 'completed'}
                 onClick={() => void call({ action: 'start' })}
                 type="button"
@@ -229,7 +218,7 @@ export function DriverConsole({
                 Start trip
               </button>
               <button
-                className="flex-1 rounded bg-red-600 px-4 py-3 text-sm font-medium text-white disabled:opacity-40"
+                className="flex-1 rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white disabled:opacity-40"
                 disabled={busy || !isActive}
                 onClick={() => {
                   setGpsMode('off');
@@ -248,27 +237,31 @@ export function DriverConsole({
             ) : null}
           </section>
 
-          <section className="flex flex-col gap-3 rounded border border-black/15 p-4 dark:border-white/15">
-            <h2 className="text-sm font-medium">GPS</h2>
+          <section className="flex flex-col gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+            <h2 className="text-sm font-medium">Location</h2>
+            <p className="text-sm text-slate-500">
+              Share this phone&apos;s GPS, or simulate the route when the bus is not actually moving.
+              Say that the movement is simulated during a demonstration.
+            </p>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <button
-                className={`flex-1 rounded px-4 py-3 text-sm font-medium disabled:opacity-40 ${
+                className={`flex-1 rounded-xl px-4 py-3 text-sm font-medium disabled:opacity-40 ${
                   gpsMode === 'simulated'
-                    ? 'bg-foreground text-background'
-                    : 'border border-black/20 dark:border-white/20'
+                    ? 'bg-[#2563eb] text-white'
+                    : 'bg-slate-50 text-slate-800 ring-1 ring-slate-200'
                 }`}
                 disabled={!isActive}
                 onClick={() => setGpsMode(gpsMode === 'simulated' ? 'off' : 'simulated')}
                 type="button"
               >
-                {gpsMode === 'simulated' ? 'Stop simulation' : 'Start simulated GPS'}
+                {gpsMode === 'simulated' ? 'Stop simulation' : 'Simulate the route'}
               </button>
               <button
-                className={`flex-1 rounded px-4 py-3 text-sm font-medium disabled:opacity-40 ${
+                className={`flex-1 rounded-xl px-4 py-3 text-sm font-medium disabled:opacity-40 ${
                   gpsMode === 'device'
-                    ? 'bg-foreground text-background'
-                    : 'border border-black/20 dark:border-white/20'
+                    ? 'bg-[#2563eb] text-white'
+                    : 'bg-slate-50 text-slate-800 ring-1 ring-slate-200'
                 }`}
                 disabled={!isActive}
                 onClick={() => {
@@ -285,7 +278,7 @@ export function DriverConsole({
                 }}
                 type="button"
               >
-                {gpsMode === 'device' ? 'Stop device GPS' : 'Use device GPS'}
+                {gpsMode === 'device' ? 'Stop phone GPS' : 'Share phone GPS'}
               </button>
             </div>
 
@@ -311,12 +304,12 @@ export function DriverConsole({
             ) : null}
           </section>
 
-          <section className="flex flex-col gap-3 rounded border border-black/15 p-4 dark:border-white/15">
+          <section className="flex flex-col gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
             <h2 className="text-sm font-medium">Report a delay</h2>
             <div className="flex flex-wrap gap-2">
               {[0, 5, 12, 25].map((minutes) => (
                 <button
-                  className="flex-1 rounded border border-black/20 px-3 py-2.5 text-sm disabled:opacity-40 dark:border-white/20"
+                  className="flex-1 rounded-xl bg-slate-50 px-3 py-2.5 text-sm ring-1 ring-slate-200 disabled:opacity-40"
                   disabled={busy || selected.status === 'completed'}
                   key={minutes}
                   onClick={() => void call({ action: 'delay', delayMinutes: minutes })}
@@ -333,7 +326,7 @@ export function DriverConsole({
 
           {isActive ? (
             <Link
-              className="text-sm underline"
+              className="text-sm font-medium text-[#2563eb]"
               href={`/track/${selected.trip_id}`}
               target="_blank"
             >
