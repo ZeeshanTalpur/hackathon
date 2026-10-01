@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { AppShell, DemoDataNotice, ErrorState } from '@/components/app-shell';
+import { ServiceAlertsBanner } from '@/components/service-alerts-banner';
 import {
   SUPABASE_CONFIGURED,
   getRoutePath,
@@ -79,6 +80,8 @@ export default async function TrackPage({ params, searchParams }: TrackPageProps
 
   return (
     <AppShell title="Live tracking">
+      {/* Static here (live={false}) so it never re-renders the realtime tracking view. */}
+      <ServiceAlertsBanner routeIds={[trip.route_id]} live={false} />
       <TrackingView
         destinationStopId={destination ?? null}
         initialEtas={etas}

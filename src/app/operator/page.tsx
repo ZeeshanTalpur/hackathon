@@ -1,135 +1,118 @@
 import Link from 'next/link';
 
-import { AppShell, DemoDataNotice, EmptyState, ErrorState } from '@/components/app-shell';
-import { StatusBadge, formatDelay } from '@/components/trip-status';
-import { requireRole } from '@/lib/auth';
-import { SUPABASE_CONFIGURED, operatorTrips } from '@/lib/data/transit';
-import type { TripLive } from '@/lib/types/database';
+import { LiveRefresh } from '@/components/live-refresh';
+import { ActiveTripsTable } from '@/app/operator/active-trips-table';
+import { TimeAgo } from '@/components/time-ago';
+import { Badge, Card, Empty, ErrorNote, RouteChip, StatCard, TableWrap, Td, Th } from '@/components/ui';
+import { requireStaff } from '@/lib/auth';
+import { busStatusTone, delayLabel, gpsLabel, titleCase } from '@/lib/format';
+import { loadFleet, loadLiveTrips, loadOverview } from '@/lib/operator/queries';
+import { createClient } from '@/lib/supabase/server';
 
-export const dynamic = 'force-dynamic';
+export const metadata = { title: 'Live operations · Karachi Transit' };
 
-/**
- * Minimum operator visibility: which bus, which trip, which route, which
- * driver, where it is, what state it is in and how late it is.
- *
- * Deliberately not a full dashboard - v_trip_live and v_fleet_overview already
- * carry everything a richer view would need later.
- */
-export default async function OperatorPage() {
-  if (!SUPABASE_CONFIGURED) {
-    return (
-      <AppShell title="Operator">
-        <ErrorState
-          title="Supabase is not configured"
-          detail="Copy .env.example to .env.local and restart the dev server."
-        />
-      </AppShell>
-    );
-  }
+export default async function OperatorLivePage() {
+  await requireStaff();
+  const supabase = await createClient();
 
-  await requireRole(['operator', 'admin']);
+  const [{ overview, error: overviewError }, { trips, error: tripsError }, { fleet, error: fleetError }] =
+    await Promise.all([loadOverview(supabase), loadLiveTrips(supabase), loadFleet(supabase)]);
 
-  // Only the fetch is guarded. JSX built inside a try/catch would give the
-  // false impression that render errors are handled here.
-  let trips: TripLive[] = [];
-  let loadError: string | null = null;
-
-  try {
-    trips = await operatorTrips();
-  } catch (error) {
-    loadError = error instanceof Error ? error.message : 'Database request failed.';
-  }
-
-  if (loadError) {
-    return (
-      <AppShell title="Operator">
-        <ErrorState title="Could not load the fleet state" detail={loadError} />
-      </AppShell>
-    );
-  }
-
-  const running = trips.filter((t) => t.status === 'in_progress');
-  const delayed = running.filter((t) => t.is_delayed);
-  const noFix = running.filter((t) => t.gps_status !== 'live');
+  const delayed = trips.filter((t) => t.is_delayed);
+  const gpsDown = trips.filter((t) => t.gps_status !== 'live');
+  const attention = trips.filter((t) => t.is_delayed || t.gps_status !== 'live');
 
   return (
-    <AppShell title="Operator">
-        <dl className="grid grid-cols-3 gap-3 text-sm">
-          <Kpi label="Trips running" value={running.length} />
-          <Kpi label="Delayed" value={delayed.length} />
-          <Kpi label="No live GPS" value={noFix.length} />
-        </dl>
+    <>
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <h1 className="text-xl font-semibold">Live operations</h1>
+          <p className="text-sm opacity-70">Buses on the road right now, their delay and GPS health.</p>
+        </div>
+        <LiveRefresh tables={['bus_locations', 'trips', 'service_alerts']} />
+      </div>
 
-        {trips.length === 0 ? (
-          <EmptyState
-            title="Nothing scheduled or running"
-            detail="Reload supabase/seed.sql to restore the demo schedule."
-          />
-        ) : (
-          <ul className="flex flex-col divide-y divide-black/10 rounded border border-black/15 dark:divide-white/10 dark:border-white/15">
-            {trips.map((trip) => (
-              <li key={trip.trip_id} className="flex flex-col gap-2 p-3 text-sm">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="rounded px-2 py-0.5 text-xs font-semibold text-white"
-                      style={{ backgroundColor: trip.route_color }}
-                    >
-                      {trip.route_code}
-                    </span>
-                    <span className="font-medium">{trip.registration_no}</span>
-                    <span className="text-xs opacity-60">{trip.trip_code}</span>
-                  </div>
-                  <StatusBadge state={trip.operational_state} />
-                </div>
+      {overviewError || tripsError || fleetError ? (
+        <ErrorNote message={(overviewError ?? tripsError ?? fleetError) as string} />
+      ) : null}
 
-                <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
-                  <Fact label="Driver" value={trip.driver_name ?? 'Unassigned'} />
-                  <Fact label="Next stop" value={trip.next_stop_name ?? '--'} />
-                  <Fact label="Progress" value={`${Number(trip.progress_pct).toFixed(0)}%`} />
-                  <Fact
-                    label="Position"
-                    value={
-                      trip.gps_status === 'live' && trip.latitude !== null
-                        ? `${Number(trip.latitude).toFixed(4)}, ${Number(trip.longitude).toFixed(4)}`
-                        : 'Not live'
-                    }
-                  />
-                </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <StatCard label="Active buses" value={overview?.active_buses ?? '—'} hint={`of ${overview?.total_buses ?? '—'} in fleet`} />
+        <StatCard label="Trips in progress" value={trips.length} hint={`${overview?.upcoming_trips ?? 0} scheduled`} />
+        <StatCard label="Delayed" value={delayed.length} tone={delayed.length ? 'bad' : 'good'} hint="delay ≥ 5 min" />
+        <StatCard label="GPS unavailable" value={gpsDown.length} tone={gpsDown.length ? 'bad' : 'good'} hint="no fix for 3+ min" />
+        <StatCard label="Avg delay" value={`${overview?.avg_delay_minutes ?? 0} min`} hint="live trips" />
+        <StatCard
+          label="Active alerts"
+          value={<Link className="underline-offset-2 hover:underline" href="/operator/alerts">{overview?.active_alerts ?? 0}</Link>}
+          hint="shown to passengers"
+        />
+      </div>
 
-                {formatDelay(trip.delay_minutes) ? (
-                  <p className="text-xs text-amber-600">{formatDelay(trip.delay_minutes)}</p>
-                ) : null}
-
-                {trip.status === 'in_progress' ? (
-                  <Link className="text-xs underline" href={`/track/${trip.trip_id}`}>
-                    Open live tracking
-                  </Link>
-                ) : null}
+      {attention.length ? (
+        <Card title={`Needs attention (${attention.length})`}>
+          <ul className="flex flex-col gap-2 text-sm">
+            {attention.map((t) => (
+              <li key={t.trip_id} className="flex flex-wrap items-center gap-2">
+                <RouteChip code={t.route_code} color={t.route_color} />
+                <span className="font-medium">{t.bus_label ?? t.registration_no}</span>
+                {t.is_delayed ? <Badge tone="bad">{delayLabel(t.delay_minutes).text}</Badge> : null}
+                {t.gps_status !== 'live' ? <Badge tone="bad">{gpsLabel(t.gps_status).text}</Badge> : null}
+                <span className="opacity-70">
+                  {t.driver_name ?? 'No driver'} · next {t.next_stop_name ?? '—'} · last fix{' '}
+                  <TimeAgo iso={t.location_recorded_at} />
+                </span>
               </li>
             ))}
           </ul>
-        )}
+        </Card>
+      ) : null}
 
-        <DemoDataNotice />
-    </AppShell>
-  );
-}
+      <Card title={`Active trips (${trips.length})`} actions={<Link className="text-sm underline" href="/operator/trips">All trips</Link>}>
+        {trips.length === 0 ? <Empty>No trips are in progress.</Empty> : <ActiveTripsTable trips={trips} />}
+      </Card>
 
-function Kpi({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded border border-black/15 p-3 dark:border-white/15">
-      <dt className="text-xs opacity-60">{label}</dt>
-      <dd className="text-xl font-semibold">{value}</dd>
-    </div>
-  );
-}
-
-function Fact({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <dt className="opacity-60">{label}</dt>
-      <dd className="font-medium">{value}</dd>
-    </div>
+      <Card title={`Fleet (${fleet.length} buses)`} actions={<Link className="text-sm underline" href="/operator/buses">Manage buses</Link>}>
+        <TableWrap>
+          <thead>
+            <tr>
+              <Th>Bus</Th>
+              <Th>Status</Th>
+              <Th>Route / trip</Th>
+              <Th>Driver</Th>
+              <Th>GPS</Th>
+              <Th>Last update</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {fleet.map((b) => (
+              <tr key={b.bus_id}>
+                <Td>
+                  <span className="font-medium">{b.bus_label ?? b.registration_no}</span>
+                  <span className="block text-xs opacity-60">{b.registration_no}</span>
+                </Td>
+                <Td>
+                  <Badge tone={busStatusTone(b.bus_status)}>{titleCase(b.bus_status)}</Badge>
+                  {b.is_delayed ? <span className="ml-1"><Badge tone="bad">Delayed</Badge></span> : null}
+                </Td>
+                <Td>
+                  <RouteChip code={b.route_code} color={b.route_color} />
+                  {b.trip_code ? <span className="block text-xs opacity-60">{b.trip_code}</span> : null}
+                </Td>
+                <Td>{b.driver_name ?? <span className="opacity-50">Unassigned</span>}</Td>
+                <Td>
+                  {b.trip_id ? (
+                    <Badge tone={gpsLabel(b.gps_status).tone}>{gpsLabel(b.gps_status).text}</Badge>
+                  ) : (
+                    <span className="text-xs opacity-60">{b.telemetry_stale ? 'Not reporting' : 'Reporting'}</span>
+                  )}
+                </Td>
+                <Td><TimeAgo iso={b.location_recorded_at} /></Td>
+              </tr>
+            ))}
+          </tbody>
+        </TableWrap>
+      </Card>
+    </>
   );
 }
