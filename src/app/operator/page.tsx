@@ -9,7 +9,7 @@ import { busStatusTone, delayLabel, gpsLabel, titleCase } from '@/lib/format';
 import { loadFleet, loadLiveTrips, loadOverview } from '@/lib/operator/queries';
 import { createClient } from '@/lib/supabase/server';
 
-export const metadata = { title: 'Live operations · Karachi Transit' };
+export const metadata = { title: 'Live operations · Daily Transit' };
 
 export default async function OperatorLivePage() {
   await requireStaff();

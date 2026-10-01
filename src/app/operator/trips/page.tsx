@@ -8,7 +8,7 @@ import { delayLabel, karachiTime, minutesBetween, titleCase, tripStatusTone } fr
 import { loadLiveTrips, loadRecentTrips, loadReference } from '@/lib/operator/queries';
 import { createClient } from '@/lib/supabase/server';
 
-export const metadata = { title: 'Trips · Karachi Transit' };
+export const metadata = { title: 'Trips · Daily Transit' };
 
 const VIEWS = ['active', 'delayed', 'gps', 'completed', 'all'] as const;
 type View = (typeof VIEWS)[number];

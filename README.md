@@ -33,7 +33,17 @@ node scripts/seed-auth.mjs                    # 4 demo auth users
 
 `supabase/seed.sql` truncates and reloads the demo tables, so it is safe to
 re-run; it also regenerates timestamps relative to `now()`, which refreshes the
-"live" demo state.
+"live" demo state. Because it rewrites `profiles`, run `npm run db:seed-auth`
+again afterwards to re-link the demo logins - it repairs the links in place and
+can be run in any order.
+
+`scripts/apply-sql.mjs` can apply a file directly if you have the database
+password in `.env.local` as `SUPABASE_DB_PASSWORD`:
+
+```bash
+node scripts/apply-sql.mjs supabase/apply-all.sql   # all migrations + seed
+node scripts/apply-sql.mjs supabase/seed.sql        # reset the demo state only
+```
 
 ### Demo accounts
 

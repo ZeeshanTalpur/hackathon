@@ -8,7 +8,7 @@ import { loadFleet, loadReference } from '@/lib/operator/queries';
 import { createClient } from '@/lib/supabase/server';
 import type { BusStatus } from '@/lib/types/database';
 
-export const metadata = { title: 'Buses · Karachi Transit' };
+export const metadata = { title: 'Buses · Daily Transit' };
 
 const STATUSES: BusStatus[] = ['active', 'idle', 'maintenance', 'offline'];
 

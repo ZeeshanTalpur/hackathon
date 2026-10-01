@@ -7,7 +7,7 @@ import { loadLiveTrips, loadReference } from '@/lib/operator/queries';
 import { createClient } from '@/lib/supabase/server';
 import type { DriverStatus } from '@/lib/types/database';
 
-export const metadata = { title: 'Drivers · Karachi Transit' };
+export const metadata = { title: 'Drivers · Daily Transit' };
 
 const STATUSES: DriverStatus[] = ['active', 'off_duty', 'on_leave'];
 const TONE = { active: 'good', off_duty: 'neutral', on_leave: 'warn' } as const;

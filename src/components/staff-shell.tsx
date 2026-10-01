@@ -12,7 +12,7 @@ export function StaffShell({ session, children }: { session: SessionContext; chi
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <Link href="/operator" className="text-lg font-semibold">
-              Karachi Transit · Operations
+              Daily Transit · Operations
             </Link>
             <p className="text-xs opacity-60">DEMO / SIMULATED hackathon data - not official transport information</p>
           </div>

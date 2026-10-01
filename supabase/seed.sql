@@ -284,7 +284,9 @@ from (values
   ('TRP-D2-0001', 'KHI-D2', 'DEMO-KHI-102', 'DEMO-LIC-1002', 'outbound', 'in_progress',  -52,  14, 11.20, 47, 'Held up in traffic before Karsaz (demo).'),
   ('TRP-D3-0001', 'KHI-D3', 'DEMO-KHI-103', 'DEMO-LIC-1003', 'outbound', 'in_progress',  -20,  -3,  7.30, 22, 'Driver phone GPS stopped reporting mid-trip (demo).'),
   ('TRP-D4-0001', 'KHI-D4', 'DEMO-KHI-108', 'DEMO-LIC-1004', 'outbound', 'in_progress',  -45,   6, 12.80, 29, null),
-  ('TRP-D1-0002', 'KHI-D1', 'DEMO-KHI-105', 'DEMO-LIC-1005', 'inbound',  'scheduled',     25,   0,  0.00,  0, null),
+  -- Assigned to DEMO-LIC-1001, the driver who has a demo login, so the
+  -- "start trip" step of the demo is reachable from the driver console.
+  ('TRP-D1-0002', 'KHI-D1', 'DEMO-KHI-105', 'DEMO-LIC-1001', 'inbound',  'scheduled',     25,   0,  0.00,  0, null),
   ('TRP-D2-0002', 'KHI-D2', 'DEMO-KHI-104', 'DEMO-LIC-1007', 'inbound',  'completed',   -180,   8, 18.00,  0, null),
   ('TRP-D1-0004', 'KHI-D1', 'DEMO-KHI-104', 'DEMO-LIC-1001', 'outbound', 'completed',   -300,   3, 16.00,  0, null),
   ('TRP-D3-0002', 'KHI-D3', 'DEMO-KHI-106', 'DEMO-LIC-1003', 'outbound', 'completed',   -420,  11, 18.80,  0, null),

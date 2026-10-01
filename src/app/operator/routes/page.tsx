@@ -6,7 +6,7 @@ import { loadReference, loadRouteDetails } from '@/lib/operator/queries';
 import { createClient } from '@/lib/supabase/server';
 import type { TripDirection } from '@/lib/types/database';
 
-export const metadata = { title: 'Routes & stops · Karachi Transit' };
+export const metadata = { title: 'Routes & stops · Daily Transit' };
 
 export default async function RoutesPage() {
   await requireStaff();

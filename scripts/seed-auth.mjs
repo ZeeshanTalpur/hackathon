@@ -84,13 +84,47 @@ for (const account of ACCOUNTS) {
   created += 1;
 }
 
-// Confirm the trigger linked each account to its seeded profile.
+console.log(`\n${created} created, ${skipped} already existed, ${failed} failed`);
+
+// Repair the profile links.
+//
+// The on_auth_user_created trigger only fires when an auth user is inserted, so
+// re-running supabase/seed.sql (which truncates and reloads profiles) leaves
+// existing accounts orphaned. Re-link by email here so the two seeding steps
+// can be run in any order, any number of times.
+const { data: authUsers, error: listError } = await admin.auth.admin.listUsers({
+  page: 1,
+  perPage: 200,
+});
+
+if (listError) {
+  console.log(`Could not list auth users: ${listError.message}`);
+} else {
+  let relinked = 0;
+  for (const account of ACCOUNTS) {
+    const user = authUsers.users.find((u) => u.email === account.email);
+    if (!user) continue;
+
+    const { data: updated, error: linkError } = await admin
+      .from('profiles')
+      .update({ auth_user_id: user.id, role: account.role })
+      .eq('email', account.email)
+      .is('auth_user_id', null)
+      .select('email');
+
+    if (linkError) {
+      console.log(`  link failed ${account.email}: ${linkError.message}`);
+    } else if (updated && updated.length > 0) {
+      relinked += 1;
+    }
+  }
+  if (relinked > 0) console.log(`Re-linked ${relinked} profile(s) to existing auth users.`);
+}
+
 const { data: profiles, error: profileError } = await admin
   .from('profiles')
   .select('email, role, auth_user_id')
   .in('email', ACCOUNTS.map((a) => a.email));
-
-console.log(`\n${created} created, ${skipped} already existed, ${failed} failed`);
 
 if (profileError) {
   console.log(`Could not verify profile links: ${profileError.message}`);
@@ -101,7 +135,7 @@ if (profileError) {
     console.log(`  ${p.auth_user_id ? 'linked  ' : 'UNLINKED'} ${p.role.padEnd(9)} ${p.email}`);
   }
   if (linked.length !== ACCOUNTS.length) {
-    console.log('Unlinked rows mean migration 5 (on_auth_user_created) is not applied.');
+    console.log('Unlinked rows mean the profiles seed has no row with that email.');
   }
 }
 

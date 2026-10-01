@@ -46,9 +46,11 @@ export async function getSessionContext(): Promise<SessionContext | null> {
  */
 export async function requireRole(allowed: UserRole[]): Promise<SessionContext> {
   const session = await getSessionContext();
+  const as = allowed[0];
 
-  if (!session) redirect('/login');
-  if (!allowed.includes(session.role)) redirect('/');
+  // A missing or wrong role goes to sign-in for that role. It must not fall
+  // through to passenger search, or the operator desk looks like the ride page.
+  if (!session || !allowed.includes(session.role)) redirect(`/login?as=${as}`);
 
   return session;
 }

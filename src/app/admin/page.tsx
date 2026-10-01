@@ -8,7 +8,7 @@ import { ROLES } from '@/lib/roles';
 import { createClient } from '@/lib/supabase/server';
 import type { UserRole } from '@/lib/types/database';
 
-export const metadata = { title: 'Admin · Karachi Transit' };
+export const metadata = { title: 'Admin · Daily Transit' };
 
 const ROLE_TONE = { passenger: 'neutral', driver: 'info', operator: 'warn', admin: 'bad' } as const;
 

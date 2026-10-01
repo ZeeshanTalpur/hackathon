@@ -517,6 +517,15 @@ export type Database = {
         Args: { p_trip_id: string; p_tick_seconds?: number; p_speed_kmh?: number };
         Returns: string;
       };
+      fn_advance_trip_elapsed: {
+        Args: {
+          p_trip_id: string;
+          p_speed_kmh?: number;
+          p_time_scale?: number;
+          p_max_seconds?: number;
+        };
+        Returns: string;
+      };
       fn_record_trip_location: {
         Args: {
           p_trip_id: string;

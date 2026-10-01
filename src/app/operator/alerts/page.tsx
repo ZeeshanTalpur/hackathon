@@ -8,7 +8,7 @@ import { loadAlerts, loadReference } from '@/lib/operator/queries';
 import { createClient } from '@/lib/supabase/server';
 import type { ServiceAlert } from '@/lib/types/database';
 
-export const metadata = { title: 'Service alerts · Karachi Transit' };
+export const metadata = { title: 'Service alerts · Daily Transit' };
 
 const SEVERITY_TONE: Record<ServiceAlert['severity'], Tone> = { info: 'info', warning: 'warn', critical: 'bad' };
 

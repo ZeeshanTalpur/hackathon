@@ -4,7 +4,7 @@ import { DELAY_THRESHOLD_MIN, minutesBetween } from '@/lib/format';
 import { loadOverview, loadRecentTrips, loadReference } from '@/lib/operator/queries';
 import { createClient } from '@/lib/supabase/server';
 
-export const metadata = { title: 'Analytics · Karachi Transit' };
+export const metadata = { title: 'Analytics · Daily Transit' };
 
 function average(values: number[]): number | null {
   if (!values.length) return null;
