@@ -4,6 +4,12 @@
 > hackathon. Stop coordinates are approximate positions of real Karachi landmarks so the map looks
 > plausible. Nothing here describes a real Karachi bus service. See [ASSUMPTIONS.md](./ASSUMPTIONS.md).
 
+This is the working reference: ERD, query recipes and what is in the seed. The detailed design
+documents are [database-plan.md](./database-plan.md) (per-table specification, P0/P1/P2, Supabase
+notes), [domain-model.md](./domain-model.md) (relationships and the golden path),
+[gps-data-design.md](./gps-data-design.md), [eta-data-design.md](./eta-data-design.md) and
+[demo-scenarios.md](./demo-scenarios.md) (demo states, search and analytics queries).
+
 ## Entity relationship diagram
 
 ```mermaid
@@ -116,9 +122,9 @@ the fallback the ETA would be infinite. The seed deliberately includes one such 
 
 | View | Use |
 | --- | --- |
-| `v_active_trips` | Live map: running trips with route, bus, driver, next stop, latest fix, progress % |
-| `v_trip_stop_eta` | Every upcoming stop of every live trip with its ETA |
-| `v_fleet_status` | Operator table: one row per bus, with a `telemetry_stale` flag |
+| `v_active_trips` | Live map: running trips with route, bus, driver, next stop, latest fix, progress %, `elapsed_minutes` and `gps_status` |
+| `v_trip_stop_eta` | Every upcoming stop of every live trip with its ETA and `gps_status` |
+| `v_fleet_status` | Operator table: one row per bus, with `telemetry_stale` (10 min) and `gps_status` (3 min) |
 | `v_fleet_overview` | Single-row KPI strip (fleet counts, delays, alerts) |
 | `v_route_summary` | Route catalogue with stop counts, endpoints and live trip counts |
 | `v_bus_latest_location` | Newest GPS fix per bus |
@@ -172,12 +178,12 @@ const { data: shape } = await supabase
 | `drivers` | 8 |
 | `buses` | 10 (4 active, 3 idle, 1 maintenance, 2 offline) |
 | `stops` | 31 |
-| `routes` | 5 |
+| `routes` | 5 (4 active, 1 suspended) |
 | `route_stops` | 66 (46 outbound, 20 inbound for D1 and D2) |
-| `trips` | 8 (4 in progress, 2 scheduled, 1 completed, 1 cancelled) |
-| `trip_stop_times` | 66 |
+| `trips` | 10 (4 in progress, 1 scheduled, 3 completed, 2 cancelled) |
+| `trip_stop_times` | 78 |
 | `bus_locations` | 38 (32 live trail points + 6 last-known fixes) |
-| `service_alerts` | 5 (4 active, 1 expired) |
+| `service_alerts` | 7 (6 active, 1 expired) |
 
 ### Demo corridors
 
@@ -187,7 +193,7 @@ const { data: shape } = await supabase
 | `KHI-D2` | D2 Keamari - Gulshan-e-Iqbal | 10 (both directions) | 18.0 km | 62 min | PKR 70 |
 | `KHI-D3` | D3 Surjani Town - Saddar | 9 (outbound only) | 18.8 km | 65 min | PKR 70 |
 | `KHI-D4` | D4 Model Colony - Clifton | 10 (outbound only) | 22.5 km | 72 min | PKR 80 |
-| `KHI-D5` | D5 Korangi Crossing - Tower | 7 (outbound only) | 15.5 km | 51 min | PKR 55 |
+| `KHI-D5` | D5 Korangi Crossing - Tower (**suspended**) | 7 (outbound only) | 15.5 km | 51 min | PKR 55 |
 
 Routes share stops on purpose (Saddar, Tower, Nursery, Karsaz, Millennium Mall, Boat Basin, Teen
 Talwar, Power House, Board Office, Nazimabad No. 1), which is what makes journey search return more
@@ -199,13 +205,16 @@ Trip times are generated relative to `now()`, so re-running the seed refreshes t
 
 | Scenario | Where to see it |
 | --- | --- |
-| Healthy live trip | `TRP-D1-0001`, bus `DEMO-KHI-101`, 2 min late |
-| Badly delayed bus, stationary in traffic | `TRP-D2-0001`, bus `DEMO-KHI-102`, 14 min late, latest speed 0 |
-| Bus running ahead of schedule | `TRP-D3-0001`, bus `DEMO-KHI-103`, 3 min early |
-| Mildly delayed trip | `TRP-D4-0001`, bus `DEMO-KHI-108`, 6 min late |
-| Upcoming departures | `TRP-D1-0002` (+25 min), `TRP-D5-0001` (+40 min) |
-| Completed trip for analytics | `TRP-D2-0002`, finished 8 min late |
-| Cancelled trip | `TRP-D1-0003`, bus withdrawn for maintenance |
+| Healthy live trip (ON_TIME) | `TRP-D1-0001`, bus `DEMO-KHI-101`, 2 min late |
+| Stationary in traffic (STOPPED) | `TRP-D2-0001`, bus `DEMO-KHI-102`, 14 min late, latest speed 0 |
+| Delayed but still moving (DELAYED) | `TRP-D4-0001`, bus `DEMO-KHI-108`, 6 min late |
+| Live trip with dead GPS (GPS_UNAVAILABLE) | `TRP-D3-0001`, bus `DEMO-KHI-103`, newest fix ~14 min old |
+| Upcoming departure to start on camera | `TRP-D1-0002` (+25 min), bus `DEMO-KHI-105` |
+| Completed trips for analytics (COMPLETED) | `TRP-D2-0002` (+8), `TRP-D1-0004` (+3), `TRP-D3-0002` (+11) |
+| Cancelled trips | `TRP-D1-0003` (bus to maintenance), `TRP-D5-0001` (route suspended) |
+| Suspended route | `KHI-D5`, excluded from journey search |
 | Offline buses with stale telemetry | `DEMO-KHI-107` (3 days), `DEMO-KHI-110` (1 day) |
 | Bus in maintenance | `DEMO-KHI-106` |
 | Active alerts of each severity | `service_alerts` (info, warning, critical) |
+
+Full scenario walkthroughs with queries are in [demo-scenarios.md](./demo-scenarios.md).

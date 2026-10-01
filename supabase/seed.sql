@@ -125,25 +125,28 @@ insert into public.stops (code, name, area, latitude, longitude) values
 -- -----------------------------------------------------------------------------
 -- routes (5) - invented corridors. avg_speed_kmh = distance_km / duration * 60.
 -- -----------------------------------------------------------------------------
+-- is_active is the route status. KHI-D5 is seeded suspended so the dataset
+-- contains more than one route state and so journey search can be shown
+-- correctly excluding a withdrawn route.
 insert into public.routes
   (code, name, description, color, distance_km, avg_speed_kmh, expected_duration_min,
-   fare_pkr, headway_min, first_departure, last_departure)
+   fare_pkr, headway_min, first_departure, last_departure, is_active)
 values
   ('KHI-D1', 'D1 Tower - Power House',
    'Demo corridor: old city to North Karachi via Nazimabad.',
-   '#16a34a', 16.00, 16.00, 60, 60.00, 15, '06:00', '22:30'),
+   '#16a34a', 16.00, 16.00, 60, 60.00, 15, '06:00', '22:30', true),
   ('KHI-D2', 'D2 Keamari - Gulshan-e-Iqbal',
    'Demo corridor: port area to Gulshan via Shahrah-e-Faisal.',
-   '#2563eb', 18.00, 17.40, 62, 70.00, 20, '06:15', '22:00'),
+   '#2563eb', 18.00, 17.40, 62, 70.00, 20, '06:15', '22:00', true),
   ('KHI-D3', 'D3 Surjani Town - Saddar',
    'Demo corridor: northern suburbs to the city centre.',
-   '#f59e0b', 18.80, 17.30, 65, 70.00, 25, '05:45', '21:30'),
+   '#f59e0b', 18.80, 17.30, 65, 70.00, 25, '05:45', '21:30', true),
   ('KHI-D4', 'D4 Model Colony - Clifton',
    'Demo corridor: Malir and the airport to the seafront.',
-   '#db2777', 22.50, 18.70, 72, 80.00, 30, '06:30', '21:00'),
+   '#db2777', 22.50, 18.70, 72, 80.00, 30, '06:30', '21:00', true),
   ('KHI-D5', 'D5 Korangi Crossing - Tower',
-   'Demo corridor: Korangi to the old city via Clifton.',
-   '#7c3aed', 15.50, 18.20, 51, 55.00, 25, '06:00', '22:00');
+   'Demo corridor: Korangi to the old city via Clifton. Suspended in the demo dataset.',
+   '#7c3aed', 15.50, 18.20, 51, 55.00, 25, '06:00', '22:00', false);
 
 -- -----------------------------------------------------------------------------
 -- route_stops - outbound sequences.
@@ -234,8 +237,20 @@ where rs.direction = 'outbound'
   and r.code in ('KHI-D1', 'KHI-D2');
 
 -- -----------------------------------------------------------------------------
--- trips (8): 4 in progress (one badly delayed, one running early), 2 scheduled,
--- 1 completed, 1 cancelled. All times are relative to now().
+-- trips (10): 4 in progress, 1 scheduled, 3 completed, 2 cancelled.
+-- All times are relative to now(). Each row maps to a demo scenario - see
+-- docs/demo-scenarios.md.
+--
+--   TRP-D1-0001  in progress, 2 min late        -> ON_TIME
+--   TRP-D4-0001  in progress, 6 min late        -> DELAYED (still moving)
+--   TRP-D2-0001  in progress, 14 min late       -> STOPPED (speed 0 in traffic)
+--   TRP-D3-0001  in progress, GPS trail stale   -> GPS_UNAVAILABLE
+--   TRP-D1-0002  scheduled, departs in 25 min   -> driver "start trip" target
+--   TRP-D2-0002  completed 8 min late           -> COMPLETED
+--   TRP-D1-0004  completed 3 min late           -> analytics history
+--   TRP-D3-0002  completed 11 min late          -> analytics history
+--   TRP-D1-0003  cancelled, bus to maintenance
+--   TRP-D5-0001  cancelled, route suspended
 -- -----------------------------------------------------------------------------
 insert into public.trips
   (trip_code, route_id, bus_id, driver_id, direction, service_date,
@@ -267,12 +282,14 @@ select
 from (values
   ('TRP-D1-0001', 'KHI-D1', 'DEMO-KHI-101', 'DEMO-LIC-1001', 'outbound', 'in_progress',  -35,   2,  9.60, 38, null::text),
   ('TRP-D2-0001', 'KHI-D2', 'DEMO-KHI-102', 'DEMO-LIC-1002', 'outbound', 'in_progress',  -52,  14, 11.20, 47, 'Held up in traffic before Karsaz (demo).'),
-  ('TRP-D3-0001', 'KHI-D3', 'DEMO-KHI-103', 'DEMO-LIC-1003', 'outbound', 'in_progress',  -20,  -3,  7.30, 22, 'Running slightly ahead of schedule (demo).'),
+  ('TRP-D3-0001', 'KHI-D3', 'DEMO-KHI-103', 'DEMO-LIC-1003', 'outbound', 'in_progress',  -20,  -3,  7.30, 22, 'Driver phone GPS stopped reporting mid-trip (demo).'),
   ('TRP-D4-0001', 'KHI-D4', 'DEMO-KHI-108', 'DEMO-LIC-1004', 'outbound', 'in_progress',  -45,   6, 12.80, 29, null),
   ('TRP-D1-0002', 'KHI-D1', 'DEMO-KHI-105', 'DEMO-LIC-1005', 'inbound',  'scheduled',     25,   0,  0.00,  0, null),
-  ('TRP-D5-0001', 'KHI-D5', 'DEMO-KHI-109', 'DEMO-LIC-1006', 'outbound', 'scheduled',     40,   0,  0.00,  0, null),
   ('TRP-D2-0002', 'KHI-D2', 'DEMO-KHI-104', 'DEMO-LIC-1007', 'inbound',  'completed',   -180,   8, 18.00,  0, null),
-  ('TRP-D1-0003', 'KHI-D1', 'DEMO-KHI-106', 'DEMO-LIC-1008', 'outbound', 'cancelled',     70,   0,  0.00,  0, 'Cancelled - vehicle moved to maintenance (demo).')
+  ('TRP-D1-0004', 'KHI-D1', 'DEMO-KHI-104', 'DEMO-LIC-1001', 'outbound', 'completed',   -300,   3, 16.00,  0, null),
+  ('TRP-D3-0002', 'KHI-D3', 'DEMO-KHI-106', 'DEMO-LIC-1003', 'outbound', 'completed',   -420,  11, 18.80,  0, null),
+  ('TRP-D1-0003', 'KHI-D1', 'DEMO-KHI-106', 'DEMO-LIC-1008', 'outbound', 'cancelled',     70,   0,  0.00,  0, 'Cancelled - vehicle moved to maintenance (demo).'),
+  ('TRP-D5-0001', 'KHI-D5', 'DEMO-KHI-109', 'DEMO-LIC-1006', 'outbound', 'cancelled',     40,   0,  0.00,  0, 'Cancelled - route KHI-D5 suspended (demo).')
 ) as v(trip_code, route_code, bus_reg, license_no, direction, status,
        start_offset_min, delay_minutes, progress_km, occupancy, notes)
 join public.routes  r on r.code = v.route_code
@@ -356,19 +373,22 @@ where t.status <> 'cancelled';
 -- bus_locations - a GPS trail for each live trip.
 -- Positions are interpolated along the real route geometry by
 -- fn_route_point_at_km, so every point sits on the drawn polyline.
--- 8 samples per trip, 2 minutes apart, newest ~30 seconds old.
+-- 8 samples per trip, 2 minutes apart, newest ~30 seconds old - except
+-- TRP-D3-0001, whose whole trail is pushed 14 minutes into the past so the trip
+-- is still in_progress but its newest fix is stale (GPS_UNAVAILABLE scenario).
 -- -----------------------------------------------------------------------------
 do $$
 declare
-  v_trip    record;
-  v_point   record;
-  v_sample  integer;
-  v_km      numeric;
-  v_speed   numeric;
-  v_factor  numeric;
+  v_trip     record;
+  v_point    record;
+  v_sample   integer;
+  v_km       numeric;
+  v_speed    numeric;
+  v_factor   numeric;
+  v_age_lag  integer;
 begin
   for v_trip in
-    select t.id as trip_id, t.bus_id, t.route_id, t.direction,
+    select t.id as trip_id, t.trip_code, t.bus_id, t.route_id, t.direction,
            t.progress_km, t.delay_minutes, r.avg_speed_kmh
     from public.trips t
     join public.routes r on r.id = t.route_id
@@ -376,6 +396,9 @@ begin
   loop
     -- A delayed bus crawls; an on-time bus runs near its planning speed.
     v_factor := case when v_trip.delay_minutes >= 10 then 0.45 else 0.85 end;
+
+    -- Extra age applied to every fix of the GPS-failure trip.
+    v_age_lag := case when v_trip.trip_code = 'TRP-D3-0001' then 840 else 0 end;
 
     for v_sample in reverse 7..0 loop
       v_km := greatest(
@@ -399,7 +422,7 @@ begin
       values (
         v_trip.bus_id,
         v_trip.trip_id,
-        now() - make_interval(secs => v_sample * 120 + 30),
+        now() - make_interval(secs => v_sample * 120 + 30 + v_age_lag),
         v_point.latitude,
         v_point.longitude,
         v_speed,
@@ -438,7 +461,7 @@ join public.buses b on b.registration_no = v.registration_no
 join public.stops s on s.code = v.stop_code;
 
 -- -----------------------------------------------------------------------------
--- service_alerts (5) - 4 active, 1 expired
+-- service_alerts (7) - 6 active, 1 expired
 -- -----------------------------------------------------------------------------
 insert into public.service_alerts
   (title, message, severity, route_id, bus_id, stop_id, starts_at, ends_at, is_active)
@@ -465,6 +488,12 @@ from (values
   ('Road work near Star Gate',
    'D4 is diverting around the Star Gate junction. Expect delays of 5-10 minutes.',
    'warning', 'KHI-D4', null, 'ST-STG', -1440, 2880, true),
+  ('Live tracking unavailable on one D3 bus',
+   'Bus DEMO-KHI-103 is still in service but its location feed has dropped. Timings for this bus are estimates.',
+   'warning', 'KHI-D3', 'DEMO-KHI-103', null, -12, null, true),
+  ('Route D5 suspended',
+   'D5 Korangi Crossing - Tower is withdrawn and is not accepting journeys. Use D2 or D1 for Saddar and Tower.',
+   'critical', 'KHI-D5', null, null, -1440, null, true),
   ('Resolved: D3 diversion at Nagan Chowrangi',
    'The Nagan Chowrangi diversion has been lifted and D3 is back on its normal path.',
    'info', 'KHI-D3', null, 'ST-NGC', -4320, -120, false)

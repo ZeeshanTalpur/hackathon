@@ -22,6 +22,7 @@ const SQL_FILES = [
   'supabase/migrations/20261001120000_core_schema.sql',
   'supabase/migrations/20261001120100_functions_and_views.sql',
   'supabase/migrations/20261001120200_rls_policies.sql',
+  'supabase/migrations/20261001130000_gps_freshness.sql',
   'supabase/seed.sql',
 ];
 
@@ -32,10 +33,10 @@ const EXPECTED_COUNTS = {
   stops: 31,
   routes: 5,
   route_stops: 66,
-  trips: 8,
-  trip_stop_times: 66,
+  trips: 10,
+  trip_stop_times: 78,
   bus_locations: 38,
-  service_alerts: 5,
+  service_alerts: 7,
 };
 
 const failures = [];
@@ -172,6 +173,7 @@ check('at least one delayed trip', scenario.delayed >= 1, `got ${scenario.delaye
 check('at least one early trip', scenario.early >= 1, `got ${scenario.early}`);
 check('scheduled / completed / cancelled trips present',
   scenario.scheduled >= 1 && scenario.completed >= 1 && scenario.cancelled >= 1);
+check('3 completed trips for analytics', scenario.completed === 3, `got ${scenario.completed}`);
 check('offline, maintenance and idle buses present',
   scenario.offline_buses >= 1 && scenario.maintenance_buses >= 1 && scenario.idle_buses >= 1);
 check('stale telemetry detected for parked buses', scenario.stale_telemetry >= 3,
@@ -294,10 +296,93 @@ const haversine = await one(`select public.fn_haversine_km(24.8607, 67.0099, 24.
 check('haversine distance Saddar -> Tower is ~1.8 km',
   Number(haversine.km) > 1.5 && Number(haversine.km) < 2.2, `${haversine.km} km`);
 
+console.log('\nGPS freshness (demo scenario 4)');
+const gps = await all(`
+  select trip_code, gps_status, location_is_stale, speed_kmh, elapsed_minutes,
+         round(extract(epoch from location_age) / 60)::int as fix_age_min
+  from public.v_active_trips order by trip_code`);
+check('exactly one live trip reports stale GPS',
+  gps.filter((r) => r.gps_status === 'stale').length === 1,
+  JSON.stringify(gps.map((r) => `${r.trip_code}:${r.gps_status}`)));
+check('the other three live trips report fresh GPS',
+  gps.filter((r) => r.gps_status === 'live').length === 3);
+check('the stale trip is TRP-D3-0001 and its fix is over 10 minutes old',
+  gps.find((r) => r.gps_status === 'stale')?.trip_code === 'TRP-D3-0001'
+    && gps.find((r) => r.gps_status === 'stale')?.fix_age_min >= 10,
+  JSON.stringify(gps.find((r) => r.gps_status === 'stale')));
+check('location_is_stale agrees with gps_status',
+  gps.every((r) => r.location_is_stale === (r.gps_status !== 'live')));
+check('elapsed_minutes is positive for every live trip',
+  gps.every((r) => r.elapsed_minutes > 0), JSON.stringify(gps.map((r) => r.elapsed_minutes)));
+check('a stationary bus is represented (speed 0 with a fresh fix)',
+  gps.some((r) => Number(r.speed_kmh) === 0 && r.gps_status === 'live'));
+
+const arrivalGps = await all(`
+  select * from public.fn_stop_arrivals((select id from public.stops where code = 'ST-PWH'), 5)`);
+check('fn_stop_arrivals exposes gps_status so the UI can label estimates',
+  arrivalGps.length > 0 && arrivalGps.every((r) => typeof r.gps_status === 'string'),
+  JSON.stringify(arrivalGps.map((r) => `${r.route_code}:${r.gps_status}`)));
+
+console.log('\nRoute status');
+const routeStatus = await one(`
+  select count(*) filter (where is_active)::int as active,
+         count(*) filter (where not is_active)::int as suspended
+  from public.routes`);
+check('dataset has both active and suspended routes',
+  routeStatus.active === 4 && routeStatus.suspended === 1, JSON.stringify(routeStatus));
+
+const suspendedSearch = await all(`
+  select * from public.fn_search_routes(
+    (select id from public.stops where code = 'ST-KRC'),
+    (select id from public.stops where code = 'ST-TWR'))`);
+check('journey search excludes the suspended route (Korangi -> Tower is D5 only)',
+  suspendedSearch.length === 0, `${suspendedSearch.length} results`);
+
+const suspendedTrip = await one(`
+  select count(*)::int as n from public.trips t
+  join public.routes r on r.id = t.route_id
+  where not r.is_active and t.status in ('scheduled', 'in_progress')`);
+check('no live or upcoming trip sits on a suspended route', suspendedTrip.n === 0);
+
+console.log('\nAnalytics derivability (part 9)');
+const analytics = await one(`
+  select
+    count(*)::int as completed_trips,
+    count(distinct route_id)::int as routes_covered,
+    count(distinct driver_id)::int as drivers_covered,
+    round(avg(delay_minutes), 1) as avg_delay_minutes,
+    round(avg(extract(epoch from (actual_end_at - actual_start_at)) / 60.0), 1) as avg_duration_min
+  from public.trips where status = 'completed'`);
+check('average delay is derivable from completed trips',
+  analytics.avg_delay_minutes !== null, JSON.stringify(analytics));
+check('average trip duration is derivable from completed trips',
+  Number(analytics.avg_duration_min) > 0, JSON.stringify(analytics));
+check('completed trips span multiple routes and drivers',
+  analytics.routes_covered >= 2 && analytics.drivers_covered >= 2, JSON.stringify(analytics));
+
+const endTimes = await one(`
+  select count(*)::int as n from public.trips
+  where status = 'completed' and (actual_start_at is null or actual_end_at is null)`);
+check('every completed trip has actual start and end times', endTimes.n === 0);
+
+const cancelledTimetable = await one(`
+  select count(*)::int as n from public.trip_stop_times tst
+  join public.trips t on t.id = tst.trip_id where t.status = 'cancelled'`);
+check('cancelled trips carry no timetable rows', cancelledTimetable.n === 0);
+
+const stopUsage = await all(`
+  select s.code, count(*)::int as trips
+  from public.trip_stop_times tst
+  join public.stops s on s.id = tst.stop_id
+  group by s.code order by trips desc limit 1`);
+check('most-used stop is derivable', stopUsage.length === 1 && stopUsage[0].trips > 0,
+  JSON.stringify(stopUsage[0]));
+
 console.log('\nDashboard views');
 const overview = await one(`select * from public.v_fleet_overview`);
 check('fleet overview totals are consistent',
-  overview.total_buses === 10 && overview.trips_in_progress === 4 && overview.active_alerts === 4,
+  overview.total_buses === 10 && overview.trips_in_progress === 4
+    && overview.active_alerts === 6 && overview.active_routes === 4,
   JSON.stringify(overview));
 
 const activeTrips = await all(`select * from public.v_active_trips`);
@@ -319,6 +404,115 @@ check('v_route_summary reports live trips on D1', summary.find((r) => r.code ===
 
 const latest = await all(`select * from public.v_bus_latest_location`);
 check('v_bus_latest_location has one row per bus', latest.length === 10, `got ${latest.length}`);
+
+console.log('\nJSON dataset (data/karachi-demo-data.json)');
+let ds = null;
+try {
+  ds = JSON.parse(await readFile(path.join(root, 'data', 'karachi-demo-data.json'), 'utf8'));
+} catch {
+  check('data/karachi-demo-data.json exists', false, 'run node scripts/export-demo-data.mjs');
+}
+
+if (ds) {
+  const dbCounts = {
+    profiles: EXPECTED_COUNTS.profiles,
+    drivers: EXPECTED_COUNTS.drivers,
+    buses: EXPECTED_COUNTS.buses,
+    routes: EXPECTED_COUNTS.routes,
+    stops: EXPECTED_COUNTS.stops,
+    route_stops: EXPECTED_COUNTS.route_stops,
+    trips: EXPECTED_COUNTS.trips,
+    service_alerts: EXPECTED_COUNTS.service_alerts,
+  };
+  check('JSON row counts match the database',
+    Object.entries(dbCounts).every(([k, v]) => ds[k].length === v),
+    JSON.stringify(Object.fromEntries(Object.entries(dbCounts)
+      .filter(([k, v]) => ds[k].length !== v)
+      .map(([k, v]) => [k, `json ${ds[k].length} vs db ${v}`]))));
+
+  check('JSON is labelled as demo data',
+    ds.meta.data_classification === 'DEMO / SIMULATED HACKATHON DATA'
+      && /INVENTED/.test(ds.meta.disclaimer));
+
+  const dbStops = new Map((await all(
+    `select code, latitude::float8 as lat, longitude::float8 as lon from public.stops`))
+    .map((r) => [r.code, r]));
+  check('every JSON stop matches the database coordinates',
+    ds.stops.every((s) => {
+      const d = dbStops.get(s.code);
+      return d && Math.abs(d.lat - s.latitude) < 1e-6 && Math.abs(d.lon - s.longitude) < 1e-6;
+    }));
+
+  const validCoord = (lat, lon) =>
+    Number.isFinite(lat) && Number.isFinite(lon)
+    && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
+  check('every JSON stop coordinate is a valid latitude/longitude',
+    ds.stops.every((s) => validCoord(s.latitude, s.longitude)));
+  check('every JSON location fix is a valid latitude/longitude',
+    ds.latest_locations.every((l) => validCoord(l.latitude, l.longitude)));
+  check('every JSON heading is within 0-360',
+    ds.latest_locations.every((l) => l.heading_deg === null
+      || (l.heading_deg >= 0 && l.heading_deg < 360)));
+
+  const stopCodes = new Set(ds.stops.map((s) => s.code));
+  const routeCodes = new Set(ds.routes.map((r) => r.code));
+  const busRegs = new Set(ds.buses.map((b) => b.registration_no));
+  const licences = new Set(ds.drivers.map((d) => d.license_no));
+  const emails = new Set(ds.profiles.map((p) => p.email));
+
+  check('every JSON route_stop references a known route and stop',
+    ds.route_stops.every((rs) => routeCodes.has(rs.route_code) && stopCodes.has(rs.stop_code)));
+  check('every JSON trip references a known route, bus and driver',
+    ds.trips.every((t) => routeCodes.has(t.route_code) && busRegs.has(t.bus_registration_no)
+      && (t.driver_license_no === null || licences.has(t.driver_license_no))));
+  check('every JSON trip next_stop_code resolves',
+    ds.trips.every((t) => t.next_stop_code === null || stopCodes.has(t.next_stop_code)));
+  check('every JSON bus driver assignment resolves',
+    ds.buses.every((b) => b.assigned_driver_license_no === null
+      || licences.has(b.assigned_driver_license_no)));
+  check('every JSON driver profile link resolves',
+    ds.drivers.every((d) => d.profile_email === null || emails.has(d.profile_email)));
+  check('every JSON alert scope resolves',
+    ds.service_alerts.every((a) =>
+      (a.route_code === null || routeCodes.has(a.route_code))
+      && (a.bus_registration_no === null || busRegs.has(a.bus_registration_no))
+      && (a.stop_code === null || stopCodes.has(a.stop_code))));
+  check('every JSON location references a known bus',
+    ds.latest_locations.every((l) => busRegs.has(l.bus_registration_no)));
+
+  const scenarioNames = ds.trips.map((t) => t.demo_scenario).filter(Boolean);
+  check('all five GPS scenarios are represented by a trip',
+    ['ON_TIME', 'DELAYED', 'STOPPED', 'GPS_UNAVAILABLE', 'COMPLETED']
+      .every((s) => scenarioNames.includes(s)),
+    scenarioNames.join(', '));
+}
+
+console.log('\nGPS scenarios (data/gps-scenarios.json)');
+let gs = null;
+try {
+  gs = JSON.parse(await readFile(path.join(root, 'data', 'gps-scenarios.json'), 'utf8'));
+} catch {
+  check('data/gps-scenarios.json exists', false, 'run node scripts/export-demo-data.mjs');
+}
+
+if (gs) {
+  check('five scenarios defined', gs.scenarios.length === 5,
+    gs.scenarios.map((s) => s.name).join(', '));
+  check('every scenario names a seeded demo trip',
+    gs.scenarios.every((s) => ds?.trips.some((t) => t.trip_code === s.demo_trip_code)));
+  check('scenario thresholds match the SQL views',
+    gs.thresholds.gps_stale_seconds === 180
+      && gs.thresholds.vehicle_not_reporting_seconds === 600
+      && gs.thresholds.delayed_threshold_minutes === 5);
+  check('route walk ladder has stops and interpolated points',
+    gs.example_route_walk.stops.length === 10
+      && gs.example_route_walk.interpolated_every_2km.length === 9);
+  check('interpolated ladder coordinates are valid and inside Karachi',
+    gs.example_route_walk.interpolated_every_2km.every((p) =>
+      p.latitude >= 24.6 && p.latitude <= 25.2 && p.longitude >= 66.8 && p.longitude <= 67.4));
+  check('interpolated ladder distance increases monotonically',
+    gs.example_route_walk.interpolated_every_2km.every((p, i, a) => i === 0 || p.km > a[i - 1].km));
+}
 
 console.log(`\n${checks - failures.length}/${checks} checks passed`);
 if (failures.length > 0) {
