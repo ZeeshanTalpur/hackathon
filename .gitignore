@@ -34,6 +34,7 @@ yarn-error.log*
 .env*
 # the template carries no secrets and must be committed
 !.env.example
+.env.local
 
 # vercel
 .vercel
