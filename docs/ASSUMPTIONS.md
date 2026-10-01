@@ -69,6 +69,22 @@ dataset as simulated in the UI.
     render with `AT TIME ZONE 'Asia/Karachi'`.
 14. **`service_date` is the local date the trip departs.** Trips that run past midnight are out of
     scope.
+15. **Route status is a boolean, not an enum.** `routes.is_active = false` means suspended or
+    withdrawn, and `fn_search_routes` filters on it. Two states are all the demo needs; promote it
+    to a `route_status` enum only if a third state becomes necessary.
+16. **GPS availability is derived from the age of the newest fix, not stored as a flag.** A boolean
+    can be left stale by a crashed client; a timestamp cannot lie about how old it is. Two
+    thresholds are used because they answer different questions: 3 minutes for "is this pin safe to
+    draw as live" (`gps_status`, passenger-facing) and 10 minutes for "has this vehicle stopped
+    reporting" (`telemetry_stale`, operator-facing). A consequence: an idle bus parked at a terminal
+    is legitimately `telemetry_stale`, so combine it with `buses.status` before calling a bus
+    offline.
+17. **Dataset size deviates from the brief's suggested targets** (5 routes and 31 stops rather than
+    3 and 15-20; 10 trips rather than 3-4). The reasoning is recorded in
+    [demo-scenarios.md](./demo-scenarios.md#dataset-summary): shared stops across more routes are
+    what make journey search return more than one option, and three completed trips are the minimum
+    for "average delay" and "route performance" to mean anything. Trimming back is a two-statement
+    change if a smaller set is preferred.
 
 ## 3. ETA assumptions
 
@@ -98,13 +114,21 @@ Row level security is enabled on every table, but the policies are **demo-grade*
 - A commented-out block at the end of the RLS migration disables RLS entirely, as an escape hatch if
   policies block the demo and time runs out.
 
+**Known issue - driver PII in a public view.** `v_active_trips` exposes `driver_name` and
+`driver_phone`, and the view is granted to `anon` so the passenger map works logged out. That leaks
+driver contact details to anyone with the anon key. It is harmless for fabricated drivers but must
+not survive contact with real data. Two fixes, either is quick: drop the two columns from the view
+and let the operator screen join `drivers` directly, or revoke `anon` on `v_active_trips` and add a
+passenger-facing variant without them.
+
 ## 5. Scope boundaries
 
 Deliberately **not** built, per the brief:
 
 - No UI, maps, dashboards or auth screens.
 - No GPS simulator. The seed produces a static snapshot of live state; the simulator comes later and
-  can reuse `fn_route_point_at_km`.
+  can reuse `fn_route_point_at_km`. The state each scenario requires is specified as data in
+  `data/gps-scenarios.json` and in [gps-data-design.md](./gps-data-design.md).
 - No ML or predictive analytics.
 - No transfers in journey search - `fn_search_routes` returns direct routes only. A two-leg search
   would need a stop-to-stop graph walk, which is out of scope for the time available.

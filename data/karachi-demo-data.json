@@ -1,0 +1,1602 @@
+{
+  "meta": {
+    "project": "Smart Public Transport & Bus Tracking Platform - Karachi",
+    "data_classification": "DEMO / SIMULATED HACKATHON DATA",
+    "disclaimer": "All routes, timetables, fares, headways, bus registrations, drivers, passengers, trips, delays and GPS positions in this file are INVENTED for a hackathon demonstration. They do not describe any real Karachi public transport service, operator, schedule or fare. Stop names and coordinates are approximate positions of real, well-known Karachi landmarks so that maps render believably; the stops themselves are demo constructs and no bus stop is claimed to exist at those points. Do not present any of this as verified official transport information.",
+    "generated_by": "scripts/export-demo-data.mjs",
+    "generated_at": "2026-10-01T08:03:17.362Z",
+    "source_of_truth": "supabase/seed.sql",
+    "keying": "Rows reference each other by natural key (stop code, route code, registration, licence).",
+    "time_base": "Trip and alert times are offsets in minutes relative to the moment of export. Negative is in the past. Rebase them onto your own current time rather than treating them as absolute.",
+    "coordinates": "WGS84 decimal degrees (latitude, longitude).",
+    "timezone": "Asia/Karachi, UTC+05:00, no daylight saving.",
+    "counts": {
+      "profiles": 10,
+      "drivers": 8,
+      "buses": 10,
+      "routes": 5,
+      "stops": 31,
+      "route_stops": 66,
+      "trips": 10,
+      "latest_locations": 10,
+      "service_alerts": 7
+    }
+  },
+  "profiles": [
+    {
+      "full_name": "Hamza Qureshi",
+      "email": "hamza.qureshi@demo.invalid",
+      "phone": "+92-300-0000001",
+      "role": "admin"
+    },
+    {
+      "full_name": "Muhammad Asif",
+      "email": "m.asif@demo.invalid",
+      "phone": "+92-300-0000011",
+      "role": "driver"
+    },
+    {
+      "full_name": "Noman Shaikh",
+      "email": "noman.shaikh@demo.invalid",
+      "phone": "+92-300-0000013",
+      "role": "driver"
+    },
+    {
+      "full_name": "Zubair Ahmed",
+      "email": "zubair.ahmed@demo.invalid",
+      "phone": "+92-300-0000012",
+      "role": "driver"
+    },
+    {
+      "full_name": "Ayesha Siddiqui",
+      "email": "ayesha.siddiqui@demo.invalid",
+      "phone": "+92-300-0000002",
+      "role": "operator"
+    },
+    {
+      "full_name": "Bilal Raza",
+      "email": "bilal.raza@demo.invalid",
+      "phone": "+92-300-0000003",
+      "role": "operator"
+    },
+    {
+      "full_name": "Danish Ali",
+      "email": "danish.ali@demo.invalid",
+      "phone": "+92-300-0000024",
+      "role": "passenger"
+    },
+    {
+      "full_name": "Mehwish Khan",
+      "email": "mehwish.khan@demo.invalid",
+      "phone": "+92-300-0000023",
+      "role": "passenger"
+    },
+    {
+      "full_name": "Sana Fatima",
+      "email": "sana.fatima@demo.invalid",
+      "phone": "+92-300-0000021",
+      "role": "passenger"
+    },
+    {
+      "full_name": "Usman Tariq",
+      "email": "usman.tariq@demo.invalid",
+      "phone": "+92-300-0000022",
+      "role": "passenger"
+    }
+  ],
+  "drivers": [
+    {
+      "full_name": "Muhammad Asif",
+      "license_no": "DEMO-LIC-1001",
+      "phone": "+92-300-0000011",
+      "status": "active",
+      "rating": 4.6,
+      "profile_email": "m.asif@demo.invalid"
+    },
+    {
+      "full_name": "Zubair Ahmed",
+      "license_no": "DEMO-LIC-1002",
+      "phone": "+92-300-0000012",
+      "status": "active",
+      "rating": 4.2,
+      "profile_email": "zubair.ahmed@demo.invalid"
+    },
+    {
+      "full_name": "Noman Shaikh",
+      "license_no": "DEMO-LIC-1003",
+      "phone": "+92-300-0000013",
+      "status": "active",
+      "rating": 4.8,
+      "profile_email": "noman.shaikh@demo.invalid"
+    },
+    {
+      "full_name": "Faisal Mehmood",
+      "license_no": "DEMO-LIC-1004",
+      "phone": "+92-300-0000014",
+      "status": "active",
+      "rating": 4.1,
+      "profile_email": null
+    },
+    {
+      "full_name": "Rashid Ali",
+      "license_no": "DEMO-LIC-1005",
+      "phone": "+92-300-0000015",
+      "status": "active",
+      "rating": 3.9,
+      "profile_email": null
+    },
+    {
+      "full_name": "Sajid Hussain",
+      "license_no": "DEMO-LIC-1006",
+      "phone": "+92-300-0000016",
+      "status": "active",
+      "rating": 4.4,
+      "profile_email": null
+    },
+    {
+      "full_name": "Imtiaz Baloch",
+      "license_no": "DEMO-LIC-1007",
+      "phone": "+92-300-0000017",
+      "status": "off_duty",
+      "rating": 4,
+      "profile_email": null
+    },
+    {
+      "full_name": "Waqar Siddiqui",
+      "license_no": "DEMO-LIC-1008",
+      "phone": "+92-300-0000018",
+      "status": "on_leave",
+      "rating": 4.3,
+      "profile_email": null
+    }
+  ],
+  "buses": [
+    {
+      "registration_no": "DEMO-KHI-101",
+      "label": "Bus 101",
+      "model": "Hino AK1J",
+      "capacity": 52,
+      "has_ac": false,
+      "status": "active",
+      "assigned_driver_license_no": "DEMO-LIC-1001"
+    },
+    {
+      "registration_no": "DEMO-KHI-102",
+      "label": "Bus 102",
+      "model": "Hino AK1J",
+      "capacity": 52,
+      "has_ac": false,
+      "status": "active",
+      "assigned_driver_license_no": "DEMO-LIC-1002"
+    },
+    {
+      "registration_no": "DEMO-KHI-103",
+      "label": "Bus 103",
+      "model": "Isuzu LT134",
+      "capacity": 45,
+      "has_ac": true,
+      "status": "active",
+      "assigned_driver_license_no": "DEMO-LIC-1003"
+    },
+    {
+      "registration_no": "DEMO-KHI-104",
+      "label": "Bus 104",
+      "model": "Isuzu LT134",
+      "capacity": 45,
+      "has_ac": true,
+      "status": "idle",
+      "assigned_driver_license_no": "DEMO-LIC-1007"
+    },
+    {
+      "registration_no": "DEMO-KHI-105",
+      "label": "Bus 105",
+      "model": "Hino AK1J",
+      "capacity": 52,
+      "has_ac": false,
+      "status": "idle",
+      "assigned_driver_license_no": "DEMO-LIC-1005"
+    },
+    {
+      "registration_no": "DEMO-KHI-106",
+      "label": "Bus 106",
+      "model": "Toyota Coaster",
+      "capacity": 32,
+      "has_ac": true,
+      "status": "maintenance",
+      "assigned_driver_license_no": null
+    },
+    {
+      "registration_no": "DEMO-KHI-107",
+      "label": "Bus 107",
+      "model": "Hino AK1J",
+      "capacity": 52,
+      "has_ac": false,
+      "status": "offline",
+      "assigned_driver_license_no": null
+    },
+    {
+      "registration_no": "DEMO-KHI-108",
+      "label": "Bus 108",
+      "model": "Daewoo BH116",
+      "capacity": 60,
+      "has_ac": true,
+      "status": "active",
+      "assigned_driver_license_no": "DEMO-LIC-1004"
+    },
+    {
+      "registration_no": "DEMO-KHI-109",
+      "label": "Bus 109",
+      "model": "Isuzu LT134",
+      "capacity": 45,
+      "has_ac": false,
+      "status": "idle",
+      "assigned_driver_license_no": "DEMO-LIC-1006"
+    },
+    {
+      "registration_no": "DEMO-KHI-110",
+      "label": "Bus 110",
+      "model": "Toyota Coaster",
+      "capacity": 32,
+      "has_ac": false,
+      "status": "offline",
+      "assigned_driver_license_no": null
+    }
+  ],
+  "routes": [
+    {
+      "code": "KHI-D1",
+      "name": "D1 Tower - Power House",
+      "description": "Demo corridor: old city to North Karachi via Nazimabad.",
+      "color": "#16a34a",
+      "distance_km": 16,
+      "avg_speed_kmh": 16,
+      "expected_duration_min": 60,
+      "fare_pkr": 60,
+      "headway_min": 15,
+      "first_departure": "06:00:00",
+      "last_departure": "22:30:00",
+      "is_active": true
+    },
+    {
+      "code": "KHI-D2",
+      "name": "D2 Keamari - Gulshan-e-Iqbal",
+      "description": "Demo corridor: port area to Gulshan via Shahrah-e-Faisal.",
+      "color": "#2563eb",
+      "distance_km": 18,
+      "avg_speed_kmh": 17.4,
+      "expected_duration_min": 62,
+      "fare_pkr": 70,
+      "headway_min": 20,
+      "first_departure": "06:15:00",
+      "last_departure": "22:00:00",
+      "is_active": true
+    },
+    {
+      "code": "KHI-D3",
+      "name": "D3 Surjani Town - Saddar",
+      "description": "Demo corridor: northern suburbs to the city centre.",
+      "color": "#f59e0b",
+      "distance_km": 18.8,
+      "avg_speed_kmh": 17.3,
+      "expected_duration_min": 65,
+      "fare_pkr": 70,
+      "headway_min": 25,
+      "first_departure": "05:45:00",
+      "last_departure": "21:30:00",
+      "is_active": true
+    },
+    {
+      "code": "KHI-D4",
+      "name": "D4 Model Colony - Clifton",
+      "description": "Demo corridor: Malir and the airport to the seafront.",
+      "color": "#db2777",
+      "distance_km": 22.5,
+      "avg_speed_kmh": 18.7,
+      "expected_duration_min": 72,
+      "fare_pkr": 80,
+      "headway_min": 30,
+      "first_departure": "06:30:00",
+      "last_departure": "21:00:00",
+      "is_active": true
+    },
+    {
+      "code": "KHI-D5",
+      "name": "D5 Korangi Crossing - Tower",
+      "description": "Demo corridor: Korangi to the old city via Clifton. Suspended in the demo dataset.",
+      "color": "#7c3aed",
+      "distance_km": 15.5,
+      "avg_speed_kmh": 18.2,
+      "expected_duration_min": 51,
+      "fare_pkr": 55,
+      "headway_min": 25,
+      "first_departure": "06:00:00",
+      "last_departure": "22:00:00",
+      "is_active": false
+    }
+  ],
+  "stops": [
+    {
+      "code": "ST-APT",
+      "name": "Jinnah International Airport",
+      "area": "Airport",
+      "latitude": 24.9065,
+      "longitude": 67.1608,
+      "is_active": true
+    },
+    {
+      "code": "ST-BLC",
+      "name": "Baloch Colony Flyover",
+      "area": "Shahrah-e-Faisal",
+      "latitude": 24.8617,
+      "longitude": 67.0749,
+      "is_active": true
+    },
+    {
+      "code": "ST-BRD",
+      "name": "Board Office",
+      "area": "North Nazimabad",
+      "latitude": 24.9222,
+      "longitude": 67.0394,
+      "is_active": true
+    },
+    {
+      "code": "ST-BTB",
+      "name": "Boat Basin",
+      "area": "Clifton",
+      "latitude": 24.8215,
+      "longitude": 67.0345,
+      "is_active": true
+    },
+    {
+      "code": "ST-FSC",
+      "name": "Five Star Chowrangi",
+      "area": "North Nazimabad",
+      "latitude": 24.9318,
+      "longitude": 67.0375,
+      "is_active": true
+    },
+    {
+      "code": "ST-FTC",
+      "name": "FTC Flyover",
+      "area": "Shahrah-e-Faisal",
+      "latitude": 24.8593,
+      "longitude": 67.0541,
+      "is_active": true
+    },
+    {
+      "code": "ST-GLC",
+      "name": "Gulshan-e-Iqbal Chowrangi",
+      "area": "Gulshan-e-Iqbal",
+      "latitude": 24.923,
+      "longitude": 67.089,
+      "is_active": true
+    },
+    {
+      "code": "ST-IICR",
+      "name": "I.I. Chundrigar Road",
+      "area": "City",
+      "latitude": 24.8534,
+      "longitude": 67.0043,
+      "is_active": true
+    },
+    {
+      "code": "ST-JCM",
+      "name": "Jama Cloth Market",
+      "area": "Saddar",
+      "latitude": 24.854,
+      "longitude": 67.012,
+      "is_active": true
+    },
+    {
+      "code": "ST-KMR",
+      "name": "Keamari",
+      "area": "Keamari",
+      "latitude": 24.8426,
+      "longitude": 66.9869,
+      "is_active": true
+    },
+    {
+      "code": "ST-KRC",
+      "name": "Korangi Crossing",
+      "area": "Korangi",
+      "latitude": 24.8265,
+      "longitude": 67.1314,
+      "is_active": true
+    },
+    {
+      "code": "ST-KSZ",
+      "name": "Karsaz",
+      "area": "Shahrah-e-Faisal",
+      "latitude": 24.8744,
+      "longitude": 67.0906,
+      "is_active": true
+    },
+    {
+      "code": "ST-LSB",
+      "name": "Lasbela Chowk",
+      "area": "Garden",
+      "latitude": 24.8829,
+      "longitude": 67.0279,
+      "is_active": true
+    },
+    {
+      "code": "ST-MDC",
+      "name": "Model Colony",
+      "area": "Malir",
+      "latitude": 24.9054,
+      "longitude": 67.1788,
+      "is_active": true
+    },
+    {
+      "code": "ST-MLH",
+      "name": "Malir Halt",
+      "area": "Malir",
+      "latitude": 24.893,
+      "longitude": 67.177,
+      "is_active": true
+    },
+    {
+      "code": "ST-MLM",
+      "name": "Millennium Mall",
+      "area": "Gulshan-e-Iqbal",
+      "latitude": 24.883,
+      "longitude": 67.0999,
+      "is_active": true
+    },
+    {
+      "code": "ST-NGC",
+      "name": "Nagan Chowrangi",
+      "area": "North Karachi",
+      "latitude": 24.9589,
+      "longitude": 67.0636,
+      "is_active": true
+    },
+    {
+      "code": "ST-NMS",
+      "name": "Numaish Chowrangi",
+      "area": "Soldier Bazaar",
+      "latitude": 24.8727,
+      "longitude": 67.03,
+      "is_active": true
+    },
+    {
+      "code": "ST-NPA",
+      "name": "NIPA Chowrangi",
+      "area": "Gulshan-e-Iqbal",
+      "latitude": 24.9183,
+      "longitude": 67.0919,
+      "is_active": true
+    },
+    {
+      "code": "ST-NTK",
+      "name": "Natha Khan",
+      "area": "Shahrah-e-Faisal",
+      "latitude": 24.8781,
+      "longitude": 67.1246,
+      "is_active": true
+    },
+    {
+      "code": "ST-NUR",
+      "name": "Nursery",
+      "area": "Shahrah-e-Faisal",
+      "latitude": 24.865,
+      "longitude": 67.0678,
+      "is_active": true
+    },
+    {
+      "code": "ST-NZ1",
+      "name": "Nazimabad No. 1",
+      "area": "Nazimabad",
+      "latitude": 24.9064,
+      "longitude": 67.0318,
+      "is_active": true
+    },
+    {
+      "code": "ST-PWH",
+      "name": "Power House Chowrangi",
+      "area": "North Karachi",
+      "latitude": 24.9499,
+      "longitude": 67.0659,
+      "is_active": true
+    },
+    {
+      "code": "ST-QYB",
+      "name": "Qayyumabad",
+      "area": "Korangi Road",
+      "latitude": 24.8349,
+      "longitude": 67.0875,
+      "is_active": true
+    },
+    {
+      "code": "ST-SDR",
+      "name": "Saddar (Empress Market)",
+      "area": "Saddar",
+      "latitude": 24.8607,
+      "longitude": 67.0099,
+      "is_active": true
+    },
+    {
+      "code": "ST-SRJ",
+      "name": "Surjani Town Sector 5-C",
+      "area": "Surjani Town",
+      "latitude": 25.0072,
+      "longitude": 67.0585,
+      "is_active": true
+    },
+    {
+      "code": "ST-STG",
+      "name": "Star Gate",
+      "area": "Airport",
+      "latitude": 24.893,
+      "longitude": 67.1452,
+      "is_active": true
+    },
+    {
+      "code": "ST-TNH",
+      "name": "Teen Hatti",
+      "area": "Jamshed Town",
+      "latitude": 24.8894,
+      "longitude": 67.033,
+      "is_active": true
+    },
+    {
+      "code": "ST-TTL",
+      "name": "Teen Talwar",
+      "area": "Clifton",
+      "latitude": 24.8167,
+      "longitude": 67.031,
+      "is_active": true
+    },
+    {
+      "code": "ST-TWR",
+      "name": "Tower",
+      "area": "Kharadar",
+      "latitude": 24.8503,
+      "longitude": 66.9968,
+      "is_active": true
+    },
+    {
+      "code": "ST-UPM",
+      "name": "UP More",
+      "area": "North Nazimabad",
+      "latitude": 24.9466,
+      "longitude": 67.0545,
+      "is_active": true
+    }
+  ],
+  "route_stops": [
+    {
+      "route_code": "KHI-D1",
+      "direction": "outbound",
+      "stop_order": 1,
+      "stop_code": "ST-TWR",
+      "stop_name": "Tower",
+      "distance_from_start_km": 0,
+      "scheduled_offset_min": 0,
+      "is_major_stop": true
+    },
+    {
+      "route_code": "KHI-D1",
+      "direction": "outbound",
+      "stop_order": 2,
+      "stop_code": "ST-IICR",
+      "stop_name": "I.I. Chundrigar Road",
+      "distance_from_start_km": 1.1,
+      "scheduled_offset_min": 4,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D1",
+      "direction": "outbound",
+      "stop_order": 3,
+      "stop_code": "ST-SDR",
+      "stop_name": "Saddar (Empress Market)",
+      "distance_from_start_km": 2.3,
+      "scheduled_offset_min": 9,
+      "is_major_stop": true
+    },
+    {
+      "route_code": "KHI-D1",
+      "direction": "outbound",
+      "stop_order": 4,
+      "stop_code": "ST-NMS",
+      "stop_name": "Numaish Chowrangi",
+      "distance_from_start_km": 4.8,
+      "scheduled_offset_min": 17,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D1",
+      "direction": "outbound",
+      "stop_order": 5,
+      "stop_code": "ST-LSB",
+      "stop_name": "Lasbela Chowk",
+      "distance_from_start_km": 6,
+      "scheduled_offset_min": 22,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D1",
+      "direction": "outbound",
+      "stop_order": 6,
+      "stop_code": "ST-TNH",
+      "stop_name": "Teen Hatti",
+      "distance_from_start_km": 7,
+      "scheduled_offset_min": 26,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D1",
+      "direction": "outbound",
+      "stop_order": 7,
+      "stop_code": "ST-NZ1",
+      "stop_name": "Nazimabad No. 1",
+      "distance_from_start_km": 9,
+      "scheduled_offset_min": 33,
+      "is_major_stop": true
+    },
+    {
+      "route_code": "KHI-D1",
+      "direction": "outbound",
+      "stop_order": 8,
+      "stop_code": "ST-BRD",
+      "stop_name": "Board Office",
+      "distance_from_start_km": 11,
+      "scheduled_offset_min": 40,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D1",
+      "direction": "outbound",
+      "stop_order": 9,
+      "stop_code": "ST-FSC",
+      "stop_name": "Five Star Chowrangi",
+      "distance_from_start_km": 12.6,
+      "scheduled_offset_min": 45,
+      "is_major_stop": true
+    },
+    {
+      "route_code": "KHI-D1",
+      "direction": "outbound",
+      "stop_order": 10,
+      "stop_code": "ST-PWH",
+      "stop_name": "Power House Chowrangi",
+      "distance_from_start_km": 16,
+      "scheduled_offset_min": 60,
+      "is_major_stop": true
+    },
+    {
+      "route_code": "KHI-D1",
+      "direction": "inbound",
+      "stop_order": 1,
+      "stop_code": "ST-PWH",
+      "stop_name": "Power House Chowrangi",
+      "distance_from_start_km": 0,
+      "scheduled_offset_min": 0,
+      "is_major_stop": true
+    },
+    {
+      "route_code": "KHI-D1",
+      "direction": "inbound",
+      "stop_order": 2,
+      "stop_code": "ST-FSC",
+      "stop_name": "Five Star Chowrangi",
+      "distance_from_start_km": 3.4,
+      "scheduled_offset_min": 15,
+      "is_major_stop": true
+    },
+    {
+      "route_code": "KHI-D1",
+      "direction": "inbound",
+      "stop_order": 3,
+      "stop_code": "ST-BRD",
+      "stop_name": "Board Office",
+      "distance_from_start_km": 5,
+      "scheduled_offset_min": 20,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D1",
+      "direction": "inbound",
+      "stop_order": 4,
+      "stop_code": "ST-NZ1",
+      "stop_name": "Nazimabad No. 1",
+      "distance_from_start_km": 7,
+      "scheduled_offset_min": 27,
+      "is_major_stop": true
+    },
+    {
+      "route_code": "KHI-D1",
+      "direction": "inbound",
+      "stop_order": 5,
+      "stop_code": "ST-TNH",
+      "stop_name": "Teen Hatti",
+      "distance_from_start_km": 9,
+      "scheduled_offset_min": 34,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D1",
+      "direction": "inbound",
+      "stop_order": 6,
+      "stop_code": "ST-LSB",
+      "stop_name": "Lasbela Chowk",
+      "distance_from_start_km": 10,
+      "scheduled_offset_min": 38,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D1",
+      "direction": "inbound",
+      "stop_order": 7,
+      "stop_code": "ST-NMS",
+      "stop_name": "Numaish Chowrangi",
+      "distance_from_start_km": 11.2,
+      "scheduled_offset_min": 43,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D1",
+      "direction": "inbound",
+      "stop_order": 8,
+      "stop_code": "ST-SDR",
+      "stop_name": "Saddar (Empress Market)",
+      "distance_from_start_km": 13.7,
+      "scheduled_offset_min": 51,
+      "is_major_stop": true
+    },
+    {
+      "route_code": "KHI-D1",
+      "direction": "inbound",
+      "stop_order": 9,
+      "stop_code": "ST-IICR",
+      "stop_name": "I.I. Chundrigar Road",
+      "distance_from_start_km": 14.9,
+      "scheduled_offset_min": 56,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D1",
+      "direction": "inbound",
+      "stop_order": 10,
+      "stop_code": "ST-TWR",
+      "stop_name": "Tower",
+      "distance_from_start_km": 16,
+      "scheduled_offset_min": 60,
+      "is_major_stop": true
+    },
+    {
+      "route_code": "KHI-D2",
+      "direction": "outbound",
+      "stop_order": 1,
+      "stop_code": "ST-KMR",
+      "stop_name": "Keamari",
+      "distance_from_start_km": 0,
+      "scheduled_offset_min": 0,
+      "is_major_stop": true
+    },
+    {
+      "route_code": "KHI-D2",
+      "direction": "outbound",
+      "stop_order": 2,
+      "stop_code": "ST-TWR",
+      "stop_name": "Tower",
+      "distance_from_start_km": 1.5,
+      "scheduled_offset_min": 6,
+      "is_major_stop": true
+    },
+    {
+      "route_code": "KHI-D2",
+      "direction": "outbound",
+      "stop_order": 3,
+      "stop_code": "ST-SDR",
+      "stop_name": "Saddar (Empress Market)",
+      "distance_from_start_km": 3.5,
+      "scheduled_offset_min": 14,
+      "is_major_stop": true
+    },
+    {
+      "route_code": "KHI-D2",
+      "direction": "outbound",
+      "stop_order": 4,
+      "stop_code": "ST-FTC",
+      "stop_name": "FTC Flyover",
+      "distance_from_start_km": 7.3,
+      "scheduled_offset_min": 25,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D2",
+      "direction": "outbound",
+      "stop_order": 5,
+      "stop_code": "ST-NUR",
+      "stop_name": "Nursery",
+      "distance_from_start_km": 9,
+      "scheduled_offset_min": 30,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D2",
+      "direction": "outbound",
+      "stop_order": 6,
+      "stop_code": "ST-BLC",
+      "stop_name": "Baloch Colony Flyover",
+      "distance_from_start_km": 10.2,
+      "scheduled_offset_min": 34,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D2",
+      "direction": "outbound",
+      "stop_order": 7,
+      "stop_code": "ST-KSZ",
+      "stop_name": "Karsaz",
+      "distance_from_start_km": 12.3,
+      "scheduled_offset_min": 41,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D2",
+      "direction": "outbound",
+      "stop_order": 8,
+      "stop_code": "ST-MLM",
+      "stop_name": "Millennium Mall",
+      "distance_from_start_km": 13.7,
+      "scheduled_offset_min": 45,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D2",
+      "direction": "outbound",
+      "stop_order": 9,
+      "stop_code": "ST-NPA",
+      "stop_name": "NIPA Chowrangi",
+      "distance_from_start_km": 17,
+      "scheduled_offset_min": 57,
+      "is_major_stop": true
+    },
+    {
+      "route_code": "KHI-D2",
+      "direction": "outbound",
+      "stop_order": 10,
+      "stop_code": "ST-GLC",
+      "stop_name": "Gulshan-e-Iqbal Chowrangi",
+      "distance_from_start_km": 18,
+      "scheduled_offset_min": 62,
+      "is_major_stop": true
+    },
+    {
+      "route_code": "KHI-D2",
+      "direction": "inbound",
+      "stop_order": 1,
+      "stop_code": "ST-GLC",
+      "stop_name": "Gulshan-e-Iqbal Chowrangi",
+      "distance_from_start_km": 0,
+      "scheduled_offset_min": 0,
+      "is_major_stop": true
+    },
+    {
+      "route_code": "KHI-D2",
+      "direction": "inbound",
+      "stop_order": 2,
+      "stop_code": "ST-NPA",
+      "stop_name": "NIPA Chowrangi",
+      "distance_from_start_km": 1,
+      "scheduled_offset_min": 5,
+      "is_major_stop": true
+    },
+    {
+      "route_code": "KHI-D2",
+      "direction": "inbound",
+      "stop_order": 3,
+      "stop_code": "ST-MLM",
+      "stop_name": "Millennium Mall",
+      "distance_from_start_km": 4.3,
+      "scheduled_offset_min": 17,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D2",
+      "direction": "inbound",
+      "stop_order": 4,
+      "stop_code": "ST-KSZ",
+      "stop_name": "Karsaz",
+      "distance_from_start_km": 5.7,
+      "scheduled_offset_min": 21,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D2",
+      "direction": "inbound",
+      "stop_order": 5,
+      "stop_code": "ST-BLC",
+      "stop_name": "Baloch Colony Flyover",
+      "distance_from_start_km": 7.8,
+      "scheduled_offset_min": 28,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D2",
+      "direction": "inbound",
+      "stop_order": 6,
+      "stop_code": "ST-NUR",
+      "stop_name": "Nursery",
+      "distance_from_start_km": 9,
+      "scheduled_offset_min": 32,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D2",
+      "direction": "inbound",
+      "stop_order": 7,
+      "stop_code": "ST-FTC",
+      "stop_name": "FTC Flyover",
+      "distance_from_start_km": 10.7,
+      "scheduled_offset_min": 37,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D2",
+      "direction": "inbound",
+      "stop_order": 8,
+      "stop_code": "ST-SDR",
+      "stop_name": "Saddar (Empress Market)",
+      "distance_from_start_km": 14.5,
+      "scheduled_offset_min": 48,
+      "is_major_stop": true
+    },
+    {
+      "route_code": "KHI-D2",
+      "direction": "inbound",
+      "stop_order": 9,
+      "stop_code": "ST-TWR",
+      "stop_name": "Tower",
+      "distance_from_start_km": 16.5,
+      "scheduled_offset_min": 56,
+      "is_major_stop": true
+    },
+    {
+      "route_code": "KHI-D2",
+      "direction": "inbound",
+      "stop_order": 10,
+      "stop_code": "ST-KMR",
+      "stop_name": "Keamari",
+      "distance_from_start_km": 18,
+      "scheduled_offset_min": 62,
+      "is_major_stop": true
+    },
+    {
+      "route_code": "KHI-D3",
+      "direction": "outbound",
+      "stop_order": 1,
+      "stop_code": "ST-SRJ",
+      "stop_name": "Surjani Town Sector 5-C",
+      "distance_from_start_km": 0,
+      "scheduled_offset_min": 0,
+      "is_major_stop": true
+    },
+    {
+      "route_code": "KHI-D3",
+      "direction": "outbound",
+      "stop_order": 2,
+      "stop_code": "ST-NGC",
+      "stop_name": "Nagan Chowrangi",
+      "distance_from_start_km": 6,
+      "scheduled_offset_min": 18,
+      "is_major_stop": true
+    },
+    {
+      "route_code": "KHI-D3",
+      "direction": "outbound",
+      "stop_order": 3,
+      "stop_code": "ST-PWH",
+      "stop_name": "Power House Chowrangi",
+      "distance_from_start_km": 7.5,
+      "scheduled_offset_min": 23,
+      "is_major_stop": true
+    },
+    {
+      "route_code": "KHI-D3",
+      "direction": "outbound",
+      "stop_order": 4,
+      "stop_code": "ST-UPM",
+      "stop_name": "UP More",
+      "distance_from_start_km": 9,
+      "scheduled_offset_min": 28,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D3",
+      "direction": "outbound",
+      "stop_order": 5,
+      "stop_code": "ST-BRD",
+      "stop_name": "Board Office",
+      "distance_from_start_km": 11,
+      "scheduled_offset_min": 35,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D3",
+      "direction": "outbound",
+      "stop_order": 6,
+      "stop_code": "ST-NZ1",
+      "stop_name": "Nazimabad No. 1",
+      "distance_from_start_km": 13,
+      "scheduled_offset_min": 42,
+      "is_major_stop": true
+    },
+    {
+      "route_code": "KHI-D3",
+      "direction": "outbound",
+      "stop_order": 7,
+      "stop_code": "ST-LSB",
+      "stop_name": "Lasbela Chowk",
+      "distance_from_start_km": 15,
+      "scheduled_offset_min": 49,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D3",
+      "direction": "outbound",
+      "stop_order": 8,
+      "stop_code": "ST-NMS",
+      "stop_name": "Numaish Chowrangi",
+      "distance_from_start_km": 16.3,
+      "scheduled_offset_min": 54,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D3",
+      "direction": "outbound",
+      "stop_order": 9,
+      "stop_code": "ST-SDR",
+      "stop_name": "Saddar (Empress Market)",
+      "distance_from_start_km": 18.8,
+      "scheduled_offset_min": 65,
+      "is_major_stop": true
+    },
+    {
+      "route_code": "KHI-D4",
+      "direction": "outbound",
+      "stop_order": 1,
+      "stop_code": "ST-MDC",
+      "stop_name": "Model Colony",
+      "distance_from_start_km": 0,
+      "scheduled_offset_min": 0,
+      "is_major_stop": true
+    },
+    {
+      "route_code": "KHI-D4",
+      "direction": "outbound",
+      "stop_order": 2,
+      "stop_code": "ST-MLH",
+      "stop_name": "Malir Halt",
+      "distance_from_start_km": 2,
+      "scheduled_offset_min": 7,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D4",
+      "direction": "outbound",
+      "stop_order": 3,
+      "stop_code": "ST-APT",
+      "stop_name": "Jinnah International Airport",
+      "distance_from_start_km": 5,
+      "scheduled_offset_min": 16,
+      "is_major_stop": true
+    },
+    {
+      "route_code": "KHI-D4",
+      "direction": "outbound",
+      "stop_order": 4,
+      "stop_code": "ST-STG",
+      "stop_name": "Star Gate",
+      "distance_from_start_km": 7.2,
+      "scheduled_offset_min": 23,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D4",
+      "direction": "outbound",
+      "stop_order": 5,
+      "stop_code": "ST-NTK",
+      "stop_name": "Natha Khan",
+      "distance_from_start_km": 10,
+      "scheduled_offset_min": 32,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D4",
+      "direction": "outbound",
+      "stop_order": 6,
+      "stop_code": "ST-MLM",
+      "stop_name": "Millennium Mall",
+      "distance_from_start_km": 12.5,
+      "scheduled_offset_min": 39,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D4",
+      "direction": "outbound",
+      "stop_order": 7,
+      "stop_code": "ST-KSZ",
+      "stop_name": "Karsaz",
+      "distance_from_start_km": 14,
+      "scheduled_offset_min": 44,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D4",
+      "direction": "outbound",
+      "stop_order": 8,
+      "stop_code": "ST-NUR",
+      "stop_name": "Nursery",
+      "distance_from_start_km": 16.8,
+      "scheduled_offset_min": 53,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D4",
+      "direction": "outbound",
+      "stop_order": 9,
+      "stop_code": "ST-BTB",
+      "stop_name": "Boat Basin",
+      "distance_from_start_km": 21.5,
+      "scheduled_offset_min": 68,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D4",
+      "direction": "outbound",
+      "stop_order": 10,
+      "stop_code": "ST-TTL",
+      "stop_name": "Teen Talwar",
+      "distance_from_start_km": 22.5,
+      "scheduled_offset_min": 72,
+      "is_major_stop": true
+    },
+    {
+      "route_code": "KHI-D5",
+      "direction": "outbound",
+      "stop_order": 1,
+      "stop_code": "ST-KRC",
+      "stop_name": "Korangi Crossing",
+      "distance_from_start_km": 0,
+      "scheduled_offset_min": 0,
+      "is_major_stop": true
+    },
+    {
+      "route_code": "KHI-D5",
+      "direction": "outbound",
+      "stop_order": 2,
+      "stop_code": "ST-QYB",
+      "stop_name": "Qayyumabad",
+      "distance_from_start_km": 5.5,
+      "scheduled_offset_min": 18,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D5",
+      "direction": "outbound",
+      "stop_order": 3,
+      "stop_code": "ST-BTB",
+      "stop_name": "Boat Basin",
+      "distance_from_start_km": 9.5,
+      "scheduled_offset_min": 30,
+      "is_major_stop": true
+    },
+    {
+      "route_code": "KHI-D5",
+      "direction": "outbound",
+      "stop_order": 4,
+      "stop_code": "ST-TTL",
+      "stop_name": "Teen Talwar",
+      "distance_from_start_km": 10.5,
+      "scheduled_offset_min": 34,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D5",
+      "direction": "outbound",
+      "stop_order": 5,
+      "stop_code": "ST-SDR",
+      "stop_name": "Saddar (Empress Market)",
+      "distance_from_start_km": 13.5,
+      "scheduled_offset_min": 44,
+      "is_major_stop": true
+    },
+    {
+      "route_code": "KHI-D5",
+      "direction": "outbound",
+      "stop_order": 6,
+      "stop_code": "ST-JCM",
+      "stop_name": "Jama Cloth Market",
+      "distance_from_start_km": 14.3,
+      "scheduled_offset_min": 47,
+      "is_major_stop": false
+    },
+    {
+      "route_code": "KHI-D5",
+      "direction": "outbound",
+      "stop_order": 7,
+      "stop_code": "ST-TWR",
+      "stop_name": "Tower",
+      "distance_from_start_km": 15.5,
+      "scheduled_offset_min": 51,
+      "is_major_stop": true
+    }
+  ],
+  "trips": [
+    {
+      "trip_code": "TRP-D1-0001",
+      "route_code": "KHI-D1",
+      "bus_registration_no": "DEMO-KHI-101",
+      "driver_license_no": "DEMO-LIC-1001",
+      "direction": "outbound",
+      "status": "in_progress",
+      "scheduled_start_offset_min": -35,
+      "expected_duration_min": 60,
+      "delay_minutes": 2,
+      "progress_km": 9.6,
+      "last_stop_order": 7,
+      "next_stop_code": "ST-BRD",
+      "occupancy": 38,
+      "notes": null,
+      "demo_scenario": "ON_TIME"
+    },
+    {
+      "trip_code": "TRP-D1-0002",
+      "route_code": "KHI-D1",
+      "bus_registration_no": "DEMO-KHI-105",
+      "driver_license_no": "DEMO-LIC-1005",
+      "direction": "inbound",
+      "status": "scheduled",
+      "scheduled_start_offset_min": 25,
+      "expected_duration_min": 60,
+      "delay_minutes": 0,
+      "progress_km": 0,
+      "last_stop_order": 0,
+      "next_stop_code": "ST-PWH",
+      "occupancy": 0,
+      "notes": null,
+      "demo_scenario": null
+    },
+    {
+      "trip_code": "TRP-D1-0003",
+      "route_code": "KHI-D1",
+      "bus_registration_no": "DEMO-KHI-106",
+      "driver_license_no": "DEMO-LIC-1008",
+      "direction": "outbound",
+      "status": "cancelled",
+      "scheduled_start_offset_min": 70,
+      "expected_duration_min": 60,
+      "delay_minutes": 0,
+      "progress_km": 0,
+      "last_stop_order": null,
+      "next_stop_code": null,
+      "occupancy": 0,
+      "notes": "Cancelled - vehicle moved to maintenance (demo).",
+      "demo_scenario": null
+    },
+    {
+      "trip_code": "TRP-D1-0004",
+      "route_code": "KHI-D1",
+      "bus_registration_no": "DEMO-KHI-104",
+      "driver_license_no": "DEMO-LIC-1001",
+      "direction": "outbound",
+      "status": "completed",
+      "scheduled_start_offset_min": -300,
+      "expected_duration_min": 60,
+      "delay_minutes": 3,
+      "progress_km": 16,
+      "last_stop_order": 10,
+      "next_stop_code": null,
+      "occupancy": 0,
+      "notes": null,
+      "demo_scenario": null
+    },
+    {
+      "trip_code": "TRP-D2-0001",
+      "route_code": "KHI-D2",
+      "bus_registration_no": "DEMO-KHI-102",
+      "driver_license_no": "DEMO-LIC-1002",
+      "direction": "outbound",
+      "status": "in_progress",
+      "scheduled_start_offset_min": -52,
+      "expected_duration_min": 62,
+      "delay_minutes": 14,
+      "progress_km": 11.2,
+      "last_stop_order": 6,
+      "next_stop_code": "ST-KSZ",
+      "occupancy": 47,
+      "notes": "Held up in traffic before Karsaz (demo).",
+      "demo_scenario": "STOPPED"
+    },
+    {
+      "trip_code": "TRP-D2-0002",
+      "route_code": "KHI-D2",
+      "bus_registration_no": "DEMO-KHI-104",
+      "driver_license_no": "DEMO-LIC-1007",
+      "direction": "inbound",
+      "status": "completed",
+      "scheduled_start_offset_min": -180,
+      "expected_duration_min": 62,
+      "delay_minutes": 8,
+      "progress_km": 18,
+      "last_stop_order": 10,
+      "next_stop_code": null,
+      "occupancy": 0,
+      "notes": null,
+      "demo_scenario": "COMPLETED"
+    },
+    {
+      "trip_code": "TRP-D3-0001",
+      "route_code": "KHI-D3",
+      "bus_registration_no": "DEMO-KHI-103",
+      "driver_license_no": "DEMO-LIC-1003",
+      "direction": "outbound",
+      "status": "in_progress",
+      "scheduled_start_offset_min": -20,
+      "expected_duration_min": 65,
+      "delay_minutes": -3,
+      "progress_km": 7.3,
+      "last_stop_order": 2,
+      "next_stop_code": "ST-PWH",
+      "occupancy": 22,
+      "notes": "Driver phone GPS stopped reporting mid-trip (demo).",
+      "demo_scenario": "GPS_UNAVAILABLE"
+    },
+    {
+      "trip_code": "TRP-D3-0002",
+      "route_code": "KHI-D3",
+      "bus_registration_no": "DEMO-KHI-106",
+      "driver_license_no": "DEMO-LIC-1003",
+      "direction": "outbound",
+      "status": "completed",
+      "scheduled_start_offset_min": -420,
+      "expected_duration_min": 65,
+      "delay_minutes": 11,
+      "progress_km": 18.8,
+      "last_stop_order": 9,
+      "next_stop_code": null,
+      "occupancy": 0,
+      "notes": null,
+      "demo_scenario": null
+    },
+    {
+      "trip_code": "TRP-D4-0001",
+      "route_code": "KHI-D4",
+      "bus_registration_no": "DEMO-KHI-108",
+      "driver_license_no": "DEMO-LIC-1004",
+      "direction": "outbound",
+      "status": "in_progress",
+      "scheduled_start_offset_min": -45,
+      "expected_duration_min": 72,
+      "delay_minutes": 6,
+      "progress_km": 12.8,
+      "last_stop_order": 6,
+      "next_stop_code": "ST-KSZ",
+      "occupancy": 29,
+      "notes": null,
+      "demo_scenario": "DELAYED"
+    },
+    {
+      "trip_code": "TRP-D5-0001",
+      "route_code": "KHI-D5",
+      "bus_registration_no": "DEMO-KHI-109",
+      "driver_license_no": "DEMO-LIC-1006",
+      "direction": "outbound",
+      "status": "cancelled",
+      "scheduled_start_offset_min": 40,
+      "expected_duration_min": 51,
+      "delay_minutes": 0,
+      "progress_km": 0,
+      "last_stop_order": null,
+      "next_stop_code": null,
+      "occupancy": 0,
+      "notes": "Cancelled - route KHI-D5 suspended (demo).",
+      "demo_scenario": null
+    }
+  ],
+  "latest_locations": [
+    {
+      "bus_registration_no": "DEMO-KHI-101",
+      "trip_code": "TRP-D1-0001",
+      "fix_age_seconds": 30,
+      "latitude": 24.91114,
+      "longitude": 67.03408,
+      "speed_kmh": 13.6,
+      "heading_deg": 23.57,
+      "progress_km": 9.6,
+      "source": "simulated",
+      "gps_status": "live"
+    },
+    {
+      "bus_registration_no": "DEMO-KHI-102",
+      "trip_code": "TRP-D2-0001",
+      "fix_age_seconds": 30,
+      "latitude": 24.867748,
+      "longitude": 67.082376,
+      "speed_kmh": 0,
+      "heading_deg": 48.28,
+      "progress_km": 11.2,
+      "source": "simulated",
+      "gps_status": "live"
+    },
+    {
+      "bus_registration_no": "DEMO-KHI-103",
+      "trip_code": "TRP-D3-0001",
+      "fix_age_seconds": 870,
+      "latitude": 24.9511,
+      "longitude": 67.065593,
+      "speed_kmh": 14.71,
+      "heading_deg": 166.95,
+      "progress_km": 7.3,
+      "source": "simulated",
+      "gps_status": "stale"
+    },
+    {
+      "bus_registration_no": "DEMO-KHI-104",
+      "trip_code": null,
+      "fix_age_seconds": 5700,
+      "latitude": 24.8426,
+      "longitude": 66.9869,
+      "speed_kmh": 0,
+      "heading_deg": 0,
+      "progress_km": 0,
+      "source": "simulated",
+      "gps_status": "stale"
+    },
+    {
+      "bus_registration_no": "DEMO-KHI-105",
+      "trip_code": null,
+      "fix_age_seconds": 2400,
+      "latitude": 24.9499,
+      "longitude": 67.0659,
+      "speed_kmh": 0,
+      "heading_deg": 0,
+      "progress_km": 0,
+      "source": "simulated",
+      "gps_status": "stale"
+    },
+    {
+      "bus_registration_no": "DEMO-KHI-106",
+      "trip_code": null,
+      "fix_age_seconds": 18000,
+      "latitude": 24.9064,
+      "longitude": 67.0318,
+      "speed_kmh": 0,
+      "heading_deg": 0,
+      "progress_km": 0,
+      "source": "simulated",
+      "gps_status": "stale"
+    },
+    {
+      "bus_registration_no": "DEMO-KHI-107",
+      "trip_code": null,
+      "fix_age_seconds": 259200,
+      "latitude": 25.0072,
+      "longitude": 67.0585,
+      "speed_kmh": 0,
+      "heading_deg": 0,
+      "progress_km": 0,
+      "source": "simulated",
+      "gps_status": "stale"
+    },
+    {
+      "bus_registration_no": "DEMO-KHI-108",
+      "trip_code": "TRP-D4-0001",
+      "fix_age_seconds": 30,
+      "latitude": 24.88128,
+      "longitude": 67.09804,
+      "speed_kmh": 15.9,
+      "heading_deg": 224.45,
+      "progress_km": 12.8,
+      "source": "simulated",
+      "gps_status": "live"
+    },
+    {
+      "bus_registration_no": "DEMO-KHI-109",
+      "trip_code": null,
+      "fix_age_seconds": 3300,
+      "latitude": 24.8265,
+      "longitude": 67.1314,
+      "speed_kmh": 0,
+      "heading_deg": 0,
+      "progress_km": 0,
+      "source": "simulated",
+      "gps_status": "stale"
+    },
+    {
+      "bus_registration_no": "DEMO-KHI-110",
+      "trip_code": null,
+      "fix_age_seconds": 86400,
+      "latitude": 24.9054,
+      "longitude": 67.1788,
+      "speed_kmh": 0,
+      "heading_deg": 0,
+      "progress_km": 0,
+      "source": "simulated",
+      "gps_status": "stale"
+    }
+  ],
+  "service_alerts": [
+    {
+      "title": "Live tracking unavailable on one D3 bus",
+      "message": "Bus DEMO-KHI-103 is still in service but its location feed has dropped. Timings for this bus are estimates.",
+      "severity": "warning",
+      "route_code": "KHI-D3",
+      "bus_registration_no": "DEMO-KHI-103",
+      "stop_code": null,
+      "starts_offset_min": -12,
+      "ends_offset_min": null,
+      "is_active": true
+    },
+    {
+      "title": "Heavy traffic on Shahrah-e-Faisal",
+      "message": "D2 services are running up to 15 minutes late between FTC and Karsaz.",
+      "severity": "warning",
+      "route_code": "KHI-D2",
+      "bus_registration_no": null,
+      "stop_code": "ST-KSZ",
+      "starts_offset_min": -40,
+      "ends_offset_min": null,
+      "is_active": true
+    },
+    {
+      "title": "Extra buses for the evening peak",
+      "message": "Two additional buses are being added to D1 between 17:00 and 20:00.",
+      "severity": "info",
+      "route_code": "KHI-D1",
+      "bus_registration_no": null,
+      "stop_code": null,
+      "starts_offset_min": -180,
+      "ends_offset_min": 300,
+      "is_active": true
+    },
+    {
+      "title": "Route D5 suspended",
+      "message": "D5 Korangi Crossing - Tower is withdrawn and is not accepting journeys. Use D2 or D1 for Saddar and Tower.",
+      "severity": "critical",
+      "route_code": "KHI-D5",
+      "bus_registration_no": null,
+      "stop_code": null,
+      "starts_offset_min": -1440,
+      "ends_offset_min": null,
+      "is_active": true
+    },
+    {
+      "title": "Road work near Star Gate",
+      "message": "D4 is diverting around the Star Gate junction. Expect delays of 5-10 minutes.",
+      "severity": "warning",
+      "route_code": "KHI-D4",
+      "bus_registration_no": null,
+      "stop_code": "ST-STG",
+      "starts_offset_min": -1440,
+      "ends_offset_min": 2880,
+      "is_active": true
+    },
+    {
+      "title": "Vehicle telemetry lost",
+      "message": "Bus DEMO-KHI-107 has not reported a position for over 48 hours. Workshop check requested.",
+      "severity": "critical",
+      "route_code": null,
+      "bus_registration_no": "DEMO-KHI-107",
+      "stop_code": null,
+      "starts_offset_min": -2880,
+      "ends_offset_min": null,
+      "is_active": true
+    },
+    {
+      "title": "Resolved: D3 diversion at Nagan Chowrangi",
+      "message": "The Nagan Chowrangi diversion has been lifted and D3 is back on its normal path.",
+      "severity": "info",
+      "route_code": "KHI-D3",
+      "bus_registration_no": null,
+      "stop_code": "ST-NGC",
+      "starts_offset_min": -4320,
+      "ends_offset_min": -120,
+      "is_active": false
+    }
+  ]
+}

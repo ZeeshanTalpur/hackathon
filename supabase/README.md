@@ -1,6 +1,6 @@
 # Database setup (Member 1: start here)
 
-Four SQL files, applied in order. They are plain SQL with no extensions, so the Supabase SQL editor
+Five SQL files, applied in order. They are plain SQL with no extensions, so the Supabase SQL editor
 is enough - the CLI is optional.
 
 | Order | File | What it does |
@@ -8,7 +8,12 @@ is enough - the CLI is optional.
 | 1 | `migrations/20261001120000_core_schema.sql` | Enums, 10 tables, indexes, `updated_at` triggers |
 | 2 | `migrations/20261001120100_functions_and_views.sql` | ETA / search functions and 6 read views |
 | 3 | `migrations/20261001120200_rls_policies.sql` | RLS policies, grants, `security_invoker` on views |
-| 4 | `seed.sql` | Demo data (simulated - see `docs/ASSUMPTIONS.md`) |
+| 4 | `migrations/20261001130000_gps_freshness.sql` | Adds `gps_status` / `location_is_stale` / `elapsed_minutes` to the live views |
+| 5 | `seed.sql` | Demo data (simulated - see `docs/ASSUMPTIONS.md`) |
+
+Migrations 1-3 are already committed and may already be applied, so they are treated as immutable;
+migration 4 is additive and safe to run on top. If you are setting up from scratch, just run all
+five in order.
 
 ## Option A - Supabase SQL editor
 
@@ -54,7 +59,8 @@ re-query `v_active_trips` on each event - with a 10-bus fleet that is cheap.
 select * from public.v_fleet_overview;
 ```
 
-Expect 10 buses, 4 in progress, 1 delayed trip, 2 offline buses, 4 active alerts.
+Expect 10 buses, 4 trips in progress, 2 delayed trips, 2 offline buses, 4 active routes,
+6 active alerts.
 
 ```sql
 -- live map payload
@@ -74,8 +80,9 @@ from public.fn_search_routes(
 
 ## Automated check
 
-`scripts/validate-db.mjs` applies all four files to an in-process Postgres and asserts 54
-invariants (row counts, route ordering, ETA monotonicity, scenario coverage, view output):
+`scripts/validate-db.mjs` applies all five SQL files to an in-process Postgres and asserts 91
+invariants (row counts, route ordering, ETA monotonicity, GPS freshness, demo scenario coverage,
+analytics derivability, view output, and the JSON dataset against the database):
 
 ```bash
 npm i -D @electric-sql/pglite
@@ -84,7 +91,26 @@ node scripts/validate-db.mjs
 
 Re-run it after changing any SQL file.
 
+## JSON dataset
+
+`data/karachi-demo-data.json` and `data/gps-scenarios.json` are **generated** from the SQL above,
+so they cannot drift from it. Regenerate after editing the seed:
+
+```bash
+node scripts/export-demo-data.mjs
+```
+
+They are useful for mocking the frontend before Supabase is wired up, and for the GPS simulator.
+Rows are keyed by natural key (stop code, route code, registration), and trip/alert times are
+offsets in minutes from the export moment rather than absolute timestamps, so a consumer can rebase
+them onto its own clock.
+
 ## Reference
 
-- [`docs/DATA_MODEL.md`](../docs/DATA_MODEL.md) - ERD, table reference, ETA formula, query recipes
+- [`docs/database-plan.md`](../docs/database-plan.md) - per-table specification, P0/P1/P2, Supabase notes
+- [`docs/domain-model.md`](../docs/domain-model.md) - relationships and the golden path
+- [`docs/gps-data-design.md`](../docs/gps-data-design.md) - GPS storage decision and write path
+- [`docs/eta-data-design.md`](../docs/eta-data-design.md) - deterministic ETA inputs and formula
+- [`docs/demo-scenarios.md`](../docs/demo-scenarios.md) - the five demo states, search and analytics queries
+- [`docs/DATA_MODEL.md`](../docs/DATA_MODEL.md) - ERD, query recipes, seed contents
 - [`docs/ASSUMPTIONS.md`](../docs/ASSUMPTIONS.md) - what is simulated, modelling decisions, limitations
