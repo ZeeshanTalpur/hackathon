@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import { cache } from 'react';
 import { createServerClient } from '@supabase/ssr';
 
 import type { Database } from '@/lib/types/database';
@@ -13,7 +14,7 @@ import type { Database } from '@/lib/types/database';
  * documented Supabase pattern: a refreshed token is written by proxy.ts, and
  * the throw here is expected and safe to swallow.
  */
-export async function createClient() {
+export const createClient = cache(async function createClient() {
   const cookieStore = await cookies();
 
   return createServerClient<Database>(
@@ -36,4 +37,4 @@ export async function createClient() {
       },
     },
   );
-}
+});

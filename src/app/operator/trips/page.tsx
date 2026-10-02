@@ -54,8 +54,7 @@ export default async function TripsPage({ searchParams }: PageProps<'/operator/t
 
       {live.error || recent.error || ref.error ? <ErrorNote message={(live.error ?? recent.error ?? ref.error) as string} /> : null}
 
-      <div className="-mx-4 overflow-x-auto px-4">
-        <div className="flex min-w-max gap-2" role="tablist">
+      <div className="flex flex-wrap gap-2" role="tablist">
           {tabs.map((tab) => (
             <Link
               key={tab.key}
@@ -69,7 +68,6 @@ export default async function TripsPage({ searchParams }: PageProps<'/operator/t
               {tab.label} <span className="tabular-nums opacity-70">{tab.count}</span>
             </Link>
           ))}
-        </div>
       </div>
 
       {view === 'active' || view === 'delayed' || view === 'gps' ? (

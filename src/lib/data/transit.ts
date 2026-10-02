@@ -1,6 +1,10 @@
 import 'server-only';
 
+import { unstable_cache } from 'next/cache';
+import { createClient as createAnonClient } from '@supabase/supabase-js';
+
 import { createClient } from '@/lib/supabase/server';
+import type { Database } from '@/lib/types/database';
 import type {
   RoutePathStop,
   RouteSearchResult,
@@ -21,17 +25,28 @@ export const SUPABASE_CONFIGURED = Boolean(
  * under RLS, so these run with the anon key.
  */
 
-export async function listStops(): Promise<Stop[]> {
-  const supabase = await createClient();
+function publicClient() {
+  return createAnonClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { auth: { persistSession: false, autoRefreshToken: false } },
+  );
+}
+
+async function fetchStops(): Promise<Stop[]> {
+  const supabase = publicClient();
   const { data, error } = await supabase
     .from('stops')
-    .select('*')
+    .select('id, code, name, area, latitude, longitude, is_active, created_at')
     .eq('is_active', true)
     .order('name');
 
   if (error) throw new Error(`Could not load stops: ${error.message}`);
-  return data ?? [];
+  return (data ?? []) as Stop[];
 }
+
+/** Stop names barely change, so repeat visits reuse this for two minutes. */
+export const listStops = unstable_cache(fetchStops, ['stops'], { revalidate: 120 });
 
 export async function searchRoutes(
   originStopId: string,
@@ -88,30 +103,31 @@ export async function busesApproaching(
   const scheduledIds = candidates.filter((trip) => trip.status === 'scheduled').map((trip) => trip.trip_id);
   const etaByTrip = new Map<string, number>();
 
-  if (liveIds.length > 0) {
-    const { data: etas, error: etaError } = await supabase
-      .from('v_trip_stop_eta')
-      .select('trip_id, eta_minutes')
-      .in('trip_id', liveIds)
-      .eq('stop_id', originStopId);
+  const [etas, times] = await Promise.all([
+    liveIds.length > 0
+      ? supabase
+          .from('v_trip_stop_eta')
+          .select('trip_id, eta_minutes')
+          .in('trip_id', liveIds)
+          .eq('stop_id', originStopId)
+      : Promise.resolve({ data: [], error: null }),
+    scheduledIds.length > 0
+      ? supabase
+          .from('trip_stop_times')
+          .select('trip_id, scheduled_arrival_at')
+          .in('trip_id', scheduledIds)
+          .eq('stop_id', originStopId)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
 
-    if (etaError) throw new Error(`Could not load arrival times: ${etaError.message}`);
-    for (const row of etas ?? []) etaByTrip.set(row.trip_id, row.eta_minutes);
-  }
+  if (etas.error) throw new Error(`Could not load arrival times: ${etas.error.message}`);
+  for (const row of etas.data ?? []) etaByTrip.set(row.trip_id, row.eta_minutes);
 
-  if (scheduledIds.length > 0) {
-    const { data: times, error: timeError } = await supabase
-      .from('trip_stop_times')
-      .select('trip_id, scheduled_arrival_at')
-      .in('trip_id', scheduledIds)
-      .eq('stop_id', originStopId);
-
-    if (timeError) throw new Error(`Could not load the timetable: ${timeError.message}`);
-    const now = Date.now();
-    for (const row of times ?? []) {
-      const minutes = Math.round((new Date(row.scheduled_arrival_at).getTime() - now) / 60000);
-      etaByTrip.set(row.trip_id, Math.max(minutes, 0));
-    }
+  if (times.error) throw new Error(`Could not load the timetable: ${times.error.message}`);
+  const now = Date.now();
+  for (const row of times.data ?? []) {
+    const minutes = Math.round((new Date(row.scheduled_arrival_at).getTime() - now) / 60000);
+    etaByTrip.set(row.trip_id, Math.max(minutes, 0));
   }
 
   const buses = candidates
@@ -201,11 +217,11 @@ export async function getTripStopEtas(tripId: string): Promise<TripStopEta[]> {
   return data ?? [];
 }
 
-export async function getRoutePath(
+async function fetchRoutePath(
   routeId: string,
-  direction: 'outbound' | 'inbound' = 'outbound',
+  direction: 'outbound' | 'inbound',
 ): Promise<RoutePathStop[]> {
-  const supabase = await createClient();
+  const supabase = publicClient();
   const { data, error } = await supabase.rpc('fn_route_path', {
     p_route_id: routeId,
     p_direction: direction,
@@ -214,6 +230,9 @@ export async function getRoutePath(
   if (error) throw new Error(`Could not load route path: ${error.message}`);
   return data ?? [];
 }
+
+/** Route geometry is stable, so the map reuses it instead of asking again. */
+export const getRoutePath = unstable_cache(fetchRoutePath, ['route-path'], { revalidate: 600 });
 
 /**
  * Trips for the signed-in driver.
@@ -302,8 +321,8 @@ export async function arrivalsAtStop(stopId: string) {
   return data ?? [];
 }
 
-export async function scheduleBoard() {
-  const supabase = await createClient();
+async function fetchScheduleBoard() {
+  const supabase = publicClient();
   const { data, error } = await supabase
     .from('v_route_summary')
     .select(
@@ -313,6 +332,9 @@ export async function scheduleBoard() {
   if (error) throw new Error(`Could not load schedules: ${error.message}`);
   return data ?? [];
 }
+
+/** Timetables are reused for two minutes so opening Ride does not rebuild them. */
+export const scheduleBoard = unstable_cache(fetchScheduleBoard, ['schedule-board'], { revalidate: 120 });
 
 export async function listBuses() {
   const supabase = await createClient();

@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { cache } from 'react';
 import { redirect } from 'next/navigation';
 
 import { createClient } from '@/lib/supabase/server';
@@ -20,7 +21,7 @@ export interface SessionContext {
  * Uses getUser() rather than getSession() because getUser() revalidates the
  * JWT against Supabase instead of trusting the cookie.
  */
-export async function getSessionContext(): Promise<SessionContext | null> {
+export const getSessionContext = cache(async function getSessionContext(): Promise<SessionContext | null> {
   const supabase = await createClient();
 
   const { data: { user }, error } = await supabase.auth.getUser();
@@ -38,7 +39,7 @@ export async function getSessionContext(): Promise<SessionContext | null> {
     profile: profile ?? null,
     role: profile?.role ?? 'passenger',
   };
-}
+});
 
 /**
  * Gate a page or handler on one or more roles. Redirects instead of throwing,

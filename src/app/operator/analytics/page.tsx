@@ -79,7 +79,7 @@ export default async function AnalyticsPage() {
       <Card title="Most active routes (trips, excluding cancelled)">
         <ol className="flex flex-col gap-3">
           {ranking.map(({ route, total, delayed: late }) => (
-            <li key={route.id} className="grid grid-cols-[minmax(6rem,10rem)_1fr_auto] items-center gap-3 text-sm">
+            <li key={route.id} className="grid grid-cols-1 items-center gap-2 text-sm sm:grid-cols-[minmax(6rem,10rem)_minmax(0,1fr)_auto] sm:gap-3">
               <span className="truncate" title={route.name}>
                 <RouteChip code={route.code} color={route.color} />
               </span>

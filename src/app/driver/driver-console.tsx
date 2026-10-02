@@ -306,10 +306,10 @@ export function DriverConsole({
 
           <section className="flex flex-col gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
             <h2 className="text-sm font-medium">Report a delay</h2>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {[0, 5, 12, 25].map((minutes) => (
                 <button
-                  className="flex-1 rounded-xl bg-slate-50 px-3 py-2.5 text-sm ring-1 ring-slate-200 disabled:opacity-40"
+                  className="rounded-xl bg-slate-50 px-3 py-2.5 text-sm ring-1 ring-slate-200 disabled:opacity-40"
                   disabled={busy || selected.status === 'completed'}
                   key={minutes}
                   onClick={() => void call({ action: 'delay', delayMinutes: minutes })}

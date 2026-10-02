@@ -31,7 +31,7 @@ export function Card({ title, actions, children, className = '' }: {
   className?: string;
 }) {
   return (
-    <section className={`rounded-lg border border-black/10 bg-background dark:border-white/15 ${className}`}>
+    <section className={`min-w-0 max-w-full rounded-lg border border-black/10 bg-background dark:border-white/15 ${className}`}>
       {title || actions ? (
         <header className="flex flex-wrap items-center justify-between gap-2 border-b border-black/10 px-4 py-3 dark:border-white/15">
           {title ? <h2 className="text-sm font-semibold">{title}</h2> : <span />}
@@ -62,8 +62,8 @@ export function StatCard({ label, value, hint, tone = 'neutral' }: {
 /** Horizontally scrollable table wrapper so wide tables stay usable on phones. */
 export function TableWrap({ children }: { children: ReactNode }) {
   return (
-    <div className="-mx-4 overflow-x-auto px-4">
-      <table className="w-full min-w-[640px] border-collapse text-left text-sm">{children}</table>
+    <div className="max-w-full overflow-x-auto overscroll-x-contain">
+      <table className="w-full min-w-[40rem] border-collapse text-left text-sm">{children}</table>
     </div>
   );
 }

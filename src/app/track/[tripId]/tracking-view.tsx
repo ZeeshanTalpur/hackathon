@@ -1,8 +1,12 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { TransitMap } from '@/components/transit-map';
+const TransitMap = dynamic(
+  () => import('@/components/transit-map').then((mod) => mod.TransitMap),
+  { ssr: false, loading: () => <div className="h-full w-full bg-[#e6e0d4]" /> },
+);
 import { StatusBadge, formatDelay, formatEta } from '@/components/trip-status';
 import { ErrorState } from '@/components/states';
 import { createClient } from '@/lib/supabase/client';
@@ -148,33 +152,12 @@ export function TrackingView({
   }, [etas, path, quiet, trip.last_stop_order]);
 
   return (
-    <div className="absolute inset-0">
-      <TransitMap
-        fill
-        bus={
-          trip.latitude !== null && trip.longitude !== null
-            ? {
-                latitude: Number(trip.latitude),
-                longitude: Number(trip.longitude),
-                headingDeg: trip.heading_deg === null ? null : Number(trip.heading_deg),
-                label: trip.bus_label ?? 'Bus',
-                isLive: hasLivePosition,
-              }
-            : null
-        }
-        destinationStopId={destinationStopId}
-        nextStopId={trip.next_stop_id}
-        originStopId={boardingStopId}
-        path={path}
-        routeColor={trip.route_color}
-        stopTips={stopTips}
-      />
-
-      <section className="absolute top-4 left-4 z-10 max-h-[calc(100%-7rem)] w-[min(100%-2rem,22rem)] overflow-auto rounded-3xl bg-[#0e1424]/95 p-5 text-white shadow-2xl ring-1 ring-white/10 backdrop-blur lg:max-h-[calc(100%-2rem)]">
+    <div className="absolute inset-0 flex min-h-0 flex-col lg:block">
+      <section className="z-10 max-h-[42%] shrink-0 overflow-auto bg-[#0e1424] p-4 text-white lg:absolute lg:top-4 lg:left-4 lg:max-h-[calc(100%-2rem)] lg:w-[min(100%-2rem,22rem)] lg:rounded-3xl lg:bg-[#0e1424]/95 lg:p-5 lg:shadow-2xl lg:ring-1 lg:ring-white/10 lg:backdrop-blur">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs text-slate-400">{trip.bus_label ?? 'Bus'}</p>
-            <h2 className="text-base font-semibold leading-snug">{trip.route_name}</h2>
+            <h2 className="text-base font-semibold leading-snug break-words">{trip.route_name}</h2>
           </div>
           <StatusBadge state={state} light />
         </div>
@@ -197,7 +180,7 @@ export function TrackingView({
           </p>
         ) : (
           <div className="mt-4">
-            <p className="font-display text-5xl leading-none tracking-tight">
+            <p className="font-display text-4xl leading-none tracking-tight sm:text-5xl">
               {formatEta(headlineEta?.eta_minutes)}
             </p>
             <p className="mt-1 text-sm text-slate-300">
@@ -215,7 +198,7 @@ export function TrackingView({
         <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-white/10 pt-3 text-sm">
           <div>
             <dt className="text-xs text-slate-400">Next stop</dt>
-            <dd>{trip.next_stop_name ?? '—'}</dd>
+            <dd className="break-words">{trip.next_stop_name ?? '—'}</dd>
           </div>
           <div>
             <dt className="text-xs text-slate-400">Speed</dt>
@@ -225,8 +208,33 @@ export function TrackingView({
         <ConnectionNote connection={connection} fetchError={fetchError} />
       </section>
 
-      <aside className="absolute top-4 right-4 z-10 hidden max-h-[calc(100%-2rem)] w-80 overflow-auto rounded-3xl bg-white/95 shadow-2xl ring-1 ring-black/5 backdrop-blur lg:block">
-        <p className="border-b border-black/5 px-5 py-4 text-sm font-semibold">Stops ahead</p>
+      <div className="relative min-h-40 w-full min-w-0 flex-1 lg:absolute lg:inset-0 lg:min-h-0">
+        <div className="absolute inset-0">
+        <TransitMap
+          fill
+          bus={
+            trip.latitude !== null && trip.longitude !== null
+              ? {
+                  latitude: Number(trip.latitude),
+                  longitude: Number(trip.longitude),
+                  headingDeg: trip.heading_deg === null ? null : Number(trip.heading_deg),
+                  label: trip.bus_label ?? 'Bus',
+                  isLive: hasLivePosition,
+                }
+              : null
+          }
+          destinationStopId={destinationStopId}
+          nextStopId={trip.next_stop_id}
+          originStopId={boardingStopId}
+          path={path}
+          routeColor={trip.route_color}
+          stopTips={stopTips}
+        />
+        </div>
+      </div>
+
+      <aside className="z-10 max-h-[34%] shrink-0 overflow-auto bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-16px_rgba(14,20,36,0.4)] lg:absolute lg:top-4 lg:right-4 lg:bottom-auto lg:max-h-[calc(100%-2rem)] lg:w-80 lg:rounded-3xl lg:bg-white/95 lg:pb-0 lg:shadow-2xl lg:ring-1 lg:ring-black/5 lg:backdrop-blur">
+        <p className="sticky top-0 border-b border-black/5 bg-white px-4 py-2.5 text-sm font-semibold lg:px-5 lg:py-4">Stops ahead</p>
         {upcoming.length === 0 ? (
           <p className="px-4 py-3 text-sm text-slate-500">
             {isFinished ? 'The run is finished.' : 'Approaching the last stop.'}
@@ -238,7 +246,7 @@ export function TrackingView({
                 key={stop.stop_id}
                 className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-2.5 text-sm last:border-0"
               >
-                <span className={stop.stop_id === trip.next_stop_id ? 'font-medium' : 'text-slate-600'}>
+                <span className={`min-w-0 ${stop.stop_id === trip.next_stop_id ? 'font-medium' : 'text-slate-600'}`}>
                   {stop.stop_name}
                 </span>
                 <span className="shrink-0 text-slate-500">
@@ -249,17 +257,6 @@ export function TrackingView({
           </ol>
         )}
       </aside>
-
-      <ol className="absolute right-3 bottom-10 left-3 z-10 max-h-32 overflow-auto rounded-xl bg-white shadow-xl ring-1 ring-slate-200 lg:hidden">
-        {upcoming.slice(0, 4).map((stop) => (
-          <li key={stop.stop_id} className="flex justify-between gap-3 px-3 py-1.5 text-sm">
-            <span>{stop.stop_name}</span>
-            <span className="text-slate-500">
-              {state === 'GPS_UNAVAILABLE' ? '—' : formatEta(stop.eta_minutes)}
-            </span>
-          </li>
-        ))}
-      </ol>
     </div>
   );
 }

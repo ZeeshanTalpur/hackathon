@@ -27,7 +27,12 @@ import type {
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
-export type LiveTrip = ActiveTrip & { nextStopEta: TripStopEta | null };
+export type NextStopEta = Pick<
+  TripStopEta,
+  'eta_minutes' | 'estimated_arrival_at' | 'projected_delay_minutes'
+>;
+
+export type LiveTrip = ActiveTrip & { nextStopEta: NextStopEta | null };
 
 function firstError(...errors: ({ message: string } | null)[]): string | null {
   return errors.find((e) => e !== null)?.message ?? null;
@@ -43,18 +48,26 @@ export async function loadLiveTrips(supabase: Supabase) {
 
   const rows = trips.data ?? [];
   const ids = rows.map((t) => t.trip_id);
-  const etas = ids.length
-    ? await supabase.from('v_trip_stop_eta').select('*').in('trip_id', ids).order('stop_order')
-    : { data: [] as TripStopEta[], error: null };
+  const nextStopIds = [...new Set(rows.map((t) => t.next_stop_id).filter((id): id is string => Boolean(id)))];
+  const etas =
+    ids.length && nextStopIds.length
+      ? await supabase
+          .from('v_trip_stop_eta')
+          .select('trip_id, stop_id, eta_minutes, estimated_arrival_at, projected_delay_minutes')
+          .in('trip_id', ids)
+          .in('stop_id', nextStopIds)
+      : { data: [] as (NextStopEta & { trip_id: string; stop_id: string })[], error: null };
 
-  const byTrip = new Map<string, TripStopEta>();
-  for (const trip of rows) {
-    const forTrip = (etas.data ?? []).filter((e) => e.trip_id === trip.trip_id);
-    byTrip.set(trip.trip_id, forTrip.find((e) => e.stop_id === trip.next_stop_id) ?? forTrip[0]);
+  const byStop = new Map<string, NextStopEta>();
+  for (const row of etas.data ?? []) {
+    byStop.set(`${row.trip_id}:${row.stop_id}`, row);
   }
 
   return {
-    trips: rows.map<LiveTrip>((t) => ({ ...t, nextStopEta: byTrip.get(t.trip_id) ?? null })),
+    trips: rows.map<LiveTrip>((t) => ({
+      ...t,
+      nextStopEta: t.next_stop_id ? (byStop.get(`${t.trip_id}:${t.next_stop_id}`) ?? null) : null,
+    })),
     error: firstError(trips.error, etas.error),
   };
 }

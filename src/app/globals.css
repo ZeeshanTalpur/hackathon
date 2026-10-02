@@ -16,12 +16,21 @@
 
 html {
   color-scheme: light;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), "Segoe UI", sans-serif;
+  overflow-x: clip;
+}
+
+input,
+select,
+textarea {
+  max-width: 100%;
+  min-width: 0;
 }
 
 .font-display {
