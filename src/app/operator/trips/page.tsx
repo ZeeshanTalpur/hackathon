@@ -54,22 +54,20 @@ export default async function TripsPage({ searchParams }: PageProps<'/operator/t
 
       {live.error || recent.error || ref.error ? <ErrorNote message={(live.error ?? recent.error ?? ref.error) as string} /> : null}
 
-      <div className="-mx-4 overflow-x-auto px-4">
-        <div className="flex min-w-max gap-2" role="tablist">
+      <div className="flex flex-wrap gap-2" role="tablist">
           {tabs.map((tab) => (
             <Link
               key={tab.key}
               href={`/operator/trips?view=${tab.key}`}
               role="tab"
               aria-selected={view === tab.key}
-              className={`rounded-full border px-3 py-1 text-sm ${
+              className={`inline-flex min-h-10 items-center rounded-full border px-3 py-2 text-sm ${
                 view === tab.key ? 'border-foreground bg-foreground text-background' : 'border-black/15 dark:border-white/20'
               }`}
             >
               {tab.label} <span className="tabular-nums opacity-70">{tab.count}</span>
             </Link>
           ))}
-        </div>
       </div>
 
       {view === 'active' || view === 'delayed' || view === 'gps' ? (
@@ -105,22 +103,22 @@ export default async function TripsPage({ searchParams }: PageProps<'/operator/t
                   const delay = delayLabel(t.delay_minutes);
                   return (
                     <tr key={t.id}>
-                      <Td>
+                      <Td label="Trip">
                         <span className="font-medium">{t.trip_code}</span>
                         <span className="block text-xs opacity-60">{t.direction}</span>
                       </Td>
-                      <Td><RouteChip code={route?.code ?? null} color={route?.color ?? null} /></Td>
-                      <Td>
+                      <Td label="Route"><RouteChip code={route?.code ?? null} color={route?.color ?? null} /></Td>
+                      <Td label="Bus / driver">
                         {bus?.label ?? bus?.registration_no ?? '—'}
                         <span className="block text-xs opacity-60">{driver?.full_name ?? 'No driver'}</span>
                       </Td>
-                      <Td><Badge tone={tripStatusTone(t.status)}>{titleCase(t.status)}</Badge></Td>
-                      <Td>{karachiTime(t.scheduled_start_at)} – {karachiTime(t.scheduled_end_at)}</Td>
-                      <Td>
+                      <Td label="Status"><Badge tone={tripStatusTone(t.status)}>{titleCase(t.status)}</Badge></Td>
+                      <Td label="Scheduled">{karachiTime(t.scheduled_start_at)} – {karachiTime(t.scheduled_end_at)}</Td>
+                      <Td label="Actual">
                         {karachiTime(t.actual_start_at)} – {karachiTime(t.actual_end_at)}
                         {duration !== null ? <span className="block text-xs opacity-60">{duration} min</span> : null}
                       </Td>
-                      <Td><Badge tone={delay.tone}>{delay.text}</Badge></Td>
+                      <Td label="Delay"><Badge tone={delay.tone}>{delay.text}</Badge></Td>
                     </tr>
                   );
                 })}

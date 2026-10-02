@@ -87,27 +87,27 @@ export default async function OperatorLivePage() {
           <tbody>
             {fleet.map((b) => (
               <tr key={b.bus_id}>
-                <Td>
+                <Td label="Bus">
                   <span className="font-medium">{b.bus_label ?? b.registration_no}</span>
                   <span className="block text-xs opacity-60">{b.registration_no}</span>
                 </Td>
-                <Td>
+                <Td label="Status">
                   <Badge tone={busStatusTone(b.bus_status)}>{titleCase(b.bus_status)}</Badge>
                   {b.is_delayed ? <span className="ml-1"><Badge tone="bad">Delayed</Badge></span> : null}
                 </Td>
-                <Td>
+                <Td label="Route">
                   <RouteChip code={b.route_code} color={b.route_color} />
                   {b.trip_code ? <span className="block text-xs opacity-60">{b.trip_code}</span> : null}
                 </Td>
-                <Td>{b.driver_name ?? <span className="opacity-50">Unassigned</span>}</Td>
-                <Td>
+                <Td label="Driver">{b.driver_name ?? <span className="opacity-50">Unassigned</span>}</Td>
+                <Td label="GPS">
                   {b.trip_id ? (
                     <Badge tone={gpsLabel(b.gps_status).tone}>{gpsLabel(b.gps_status).text}</Badge>
                   ) : (
                     <span className="text-xs opacity-60">{b.telemetry_stale ? 'Not reporting' : 'Reporting'}</span>
                   )}
                 </Td>
-                <Td><TimeAgo iso={b.location_recorded_at} /></Td>
+                <Td label="Last update"><TimeAgo iso={b.location_recorded_at} /></Td>
               </tr>
             ))}
           </tbody>

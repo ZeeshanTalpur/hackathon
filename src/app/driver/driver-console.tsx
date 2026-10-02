@@ -148,7 +148,7 @@ export function DriverConsole({
       <label className="flex flex-col gap-1 text-sm">
         <span className="font-medium">Assigned trip</span>
         <select
-          className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm"
+          className="w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-base md:text-sm"
           onChange={(event) => {
             setSelectedId(event.target.value);
             setGpsMode('off');
@@ -181,7 +181,7 @@ export function DriverConsole({
 
             <p className="text-sm opacity-70">{selected.route_name}</p>
 
-            <dl className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
+            <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
               <Fact label="Route" value={selected.route_name} />
               <Fact label="Progress" value={`${Number(selected.progress_pct).toFixed(0)}%`} />
               <Fact label="Next stop" value={selected.next_stop_name ?? '--'} />
@@ -208,9 +208,9 @@ export function DriverConsole({
           <section className="flex flex-col gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
             <h2 className="text-sm font-medium">Trip controls</h2>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <button
-                className="flex-1 rounded-xl bg-[#2563eb] px-4 py-3 text-sm font-medium text-white disabled:opacity-40"
+                className="rounded-xl bg-[#2563eb] px-4 py-3 text-sm font-medium text-white disabled:opacity-40"
                 disabled={busy || isActive || selected.status === 'completed'}
                 onClick={() => void call({ action: 'start' })}
                 type="button"
@@ -218,7 +218,7 @@ export function DriverConsole({
                 Start trip
               </button>
               <button
-                className="flex-1 rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white disabled:opacity-40"
+                className="rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white disabled:opacity-40"
                 disabled={busy || !isActive}
                 onClick={() => {
                   setGpsMode('off');
@@ -306,10 +306,10 @@ export function DriverConsole({
 
           <section className="flex flex-col gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
             <h2 className="text-sm font-medium">Report a delay</h2>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {[0, 5, 12, 25].map((minutes) => (
                 <button
-                  className="flex-1 rounded-xl bg-slate-50 px-3 py-2.5 text-sm ring-1 ring-slate-200 disabled:opacity-40"
+                  className="rounded-xl bg-slate-50 px-3 py-2.5 text-sm ring-1 ring-slate-200 disabled:opacity-40"
                   disabled={busy || selected.status === 'completed'}
                   key={minutes}
                   onClick={() => void call({ action: 'delay', delayMinutes: minutes })}
@@ -341,9 +341,9 @@ export function DriverConsole({
 
 function Fact({ label, value }: { label: string; value: string }) {
   return (
-    <div>
-      <dt className="opacity-60">{label}</dt>
-      <dd className="font-medium">{value}</dd>
+    <div className="min-w-0">
+      <dt className="text-xs opacity-60">{label}</dt>
+      <dd className="font-medium break-words">{value}</dd>
     </div>
   );
 }

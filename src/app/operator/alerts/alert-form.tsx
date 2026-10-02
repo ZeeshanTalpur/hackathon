@@ -38,7 +38,7 @@ export function AlertForm({ routes }: { routes: { id: string; code: string; name
         ))}
       </div>
 
-      <ActionForm action={createAlert} className="grid gap-3 sm:grid-cols-2">
+      <ActionForm action={createAlert} className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
         <label className="flex flex-col gap-1 text-sm sm:col-span-2">
           Title
           <input name="title" required minLength={3} maxLength={120} value={title} onChange={(e) => setTitle(e.target.value)} className={inputClass} />

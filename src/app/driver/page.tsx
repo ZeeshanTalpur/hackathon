@@ -1,5 +1,7 @@
+import { Suspense } from 'react';
+
 import { AppShell, DemoDataNotice, ErrorState } from '@/components/app-shell';
-import { requireRole } from '@/lib/auth';
+import { requireRole, type SessionContext } from '@/lib/auth';
 import { SUPABASE_CONFIGURED, driverTrips } from '@/lib/data/transit';
 import type { TripLive } from '@/lib/types/database';
 
@@ -21,8 +23,24 @@ export default async function DriverPage() {
 
   const session = await requireRole(['driver']);
 
-  // Data fetching is wrapped, not the JSX: a try/catch cannot catch render
-  // errors, so constructing elements inside it would be misleading.
+  return (
+    <AppShell title="Your run">
+      <div className="flex items-center justify-between text-sm text-slate-500">
+        <p>{session.profile?.full_name ?? 'Driver'}</p>
+        <form action="/auth/sign-out" method="post">
+          <button className="min-h-11 px-2 text-slate-500 underline" type="submit">
+            Sign out
+          </button>
+        </form>
+      </div>
+      <Suspense fallback={<div className="h-72 animate-pulse rounded-3xl bg-white" />}>
+        <DriverBoard session={session} />
+      </Suspense>
+    </AppShell>
+  );
+}
+
+async function DriverBoard({ session }: { session: SessionContext }) {
   let trips: TripLive[] = [];
   let linked = false;
   let loadError: string | null = null;
@@ -36,25 +54,13 @@ export default async function DriverPage() {
   }
 
   if (loadError) {
-    return (
-      <AppShell title="Your run">
-        <ErrorState title="Could not load your trips" detail={loadError} />
-      </AppShell>
-    );
+    return <ErrorState title="Could not load your trips" detail={loadError} />;
   }
 
   return (
-    <AppShell title="Your run">
-      <div className="flex items-center justify-between text-sm text-slate-500">
-        <p>{session.profile?.full_name ?? 'Driver'}</p>
-        <form action="/auth/sign-out" method="post">
-          <button className="text-slate-500 underline" type="submit">
-            Sign out
-          </button>
-        </form>
-      </div>
+    <>
       <DriverConsole initialTrips={trips} linked={linked} />
       <DemoDataNotice />
-    </AppShell>
+    </>
   );
 }

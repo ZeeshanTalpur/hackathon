@@ -1,6 +1,6 @@
 import { formatDelay } from '@/components/trip-status';
 import { NotificationMenu, type NoticeItem } from '@/components/notification-menu';
-import { SUPABASE_CONFIGURED, operatorTrips } from '@/lib/data/transit';
+import { SUPABASE_CONFIGURED } from '@/lib/data/transit';
 import { loadPassengerAlerts } from '@/lib/operator/queries';
 import { createClient } from '@/lib/supabase/server';
 
@@ -11,8 +11,16 @@ export async function NotificationBell({ tone = 'light' }: { tone?: 'light' | 'd
   let items: NoticeItem[] = [];
   try {
     const supabase = await createClient();
-    const [{ alerts }, running] = await Promise.all([loadPassengerAlerts(supabase), operatorTrips()]);
-    const delays = running.filter((trip) => trip.status === 'in_progress' && trip.is_delayed).slice(0, 8);
+    const [{ alerts }, delays] = await Promise.all([
+      loadPassengerAlerts(supabase),
+      supabase
+        .from('v_trip_live')
+        .select('trip_id, bus_label, route_name, delay_minutes')
+        .eq('status', 'in_progress')
+        .gte('delay_minutes', 5)
+        .order('delay_minutes', { ascending: false })
+        .limit(8),
+    ]);
 
     items = [
       ...alerts.map((alert) => ({
@@ -21,7 +29,7 @@ export async function NotificationBell({ tone = 'light' }: { tone?: 'light' | 'd
         body: alert.message,
         tone: alert.severity,
       })),
-      ...delays.map((trip) => ({
+      ...(delays.data ?? []).map((trip) => ({
         id: trip.trip_id,
         title: `${trip.bus_label ?? 'Bus'} is delayed`,
         body: [trip.route_name, formatDelay(trip.delay_minutes)].filter(Boolean).join(' · '),

@@ -31,7 +31,7 @@ export function Card({ title, actions, children, className = '' }: {
   className?: string;
 }) {
   return (
-    <section className={`rounded-lg border border-black/10 bg-background dark:border-white/15 ${className}`}>
+    <section className={`min-w-0 max-w-full rounded-lg border border-black/10 bg-background dark:border-white/15 ${className}`}>
       {title || actions ? (
         <header className="flex flex-wrap items-center justify-between gap-2 border-b border-black/10 px-4 py-3 dark:border-white/15">
           {title ? <h2 className="text-sm font-semibold">{title}</h2> : <span />}
@@ -54,16 +54,16 @@ export function StatCard({ label, value, hint, tone = 'neutral' }: {
     <div className="rounded-lg border border-black/10 p-4 dark:border-white/15">
       <p className="text-xs uppercase tracking-wide opacity-60">{label}</p>
       <p className={`mt-1 text-2xl font-semibold tabular-nums ${accent}`}>{value}</p>
-      {hint ? <p className="mt-1 text-xs opacity-60">{hint}</p> : null}
+      {hint ? <p className="mt-1 text-xs break-words opacity-60">{hint}</p> : null}
     </div>
   );
 }
 
-/** Horizontally scrollable table wrapper so wide tables stay usable on phones. */
+/** On a phone each row is a labeled card. From a tablet up it is a normal table. */
 export function TableWrap({ children }: { children: ReactNode }) {
   return (
-    <div className="-mx-4 overflow-x-auto px-4">
-      <table className="w-full min-w-[640px] border-collapse text-left text-sm">{children}</table>
+    <div className="stack-table max-w-full md:overflow-x-auto md:overscroll-x-contain">
+      <table className="w-full border-collapse text-left text-sm md:min-w-[40rem]">{children}</table>
     </div>
   );
 }
@@ -72,8 +72,12 @@ export function Th({ children, className = '' }: { children?: ReactNode; classNa
   return <th className={`border-b border-black/10 px-2 py-2 text-xs font-medium uppercase tracking-wide opacity-60 dark:border-white/15 ${className}`}>{children}</th>;
 }
 
-export function Td({ children, className = '' }: { children?: ReactNode; className?: string }) {
-  return <td className={`border-b border-black/5 px-2 py-2 align-top dark:border-white/10 ${className}`}>{children}</td>;
+export function Td({ children, className = '', label }: { children?: ReactNode; className?: string; label?: string }) {
+  return (
+    <td data-label={label} className={`border-b border-black/5 px-2 py-2 align-top break-words dark:border-white/10 ${className}`}>
+      {children}
+    </td>
+  );
 }
 
 export function Empty({ children }: { children: ReactNode }) {
@@ -99,10 +103,10 @@ export function RouteChip({ code, color }: { code: string | null; color: string 
 }
 
 export const buttonClass =
-  'inline-flex items-center justify-center rounded border border-black/20 px-3 py-1.5 text-sm hover:bg-black/5 disabled:opacity-50 dark:border-white/20 dark:hover:bg-white/10';
+  'inline-flex min-h-11 items-center justify-center rounded-xl border border-black/20 px-3 py-2 text-sm hover:bg-black/5 disabled:opacity-50 dark:border-white/20 dark:hover:bg-white/10';
 
 export const primaryButtonClass =
-  'inline-flex items-center justify-center rounded bg-foreground px-3 py-1.5 text-sm text-background hover:opacity-90 disabled:opacity-50';
+  'inline-flex min-h-11 items-center justify-center rounded-xl bg-foreground px-3 py-2 text-sm text-background hover:opacity-90 disabled:opacity-50';
 
 export const inputClass =
-  'rounded border border-black/20 bg-background px-2 py-1.5 text-sm dark:border-white/20';
+  'w-full rounded-xl border border-black/20 bg-background px-3 py-2.5 text-base dark:border-white/20 md:text-sm';

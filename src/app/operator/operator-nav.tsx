@@ -19,8 +19,8 @@ export function OperatorNav({ isAdmin }: { isAdmin: boolean }) {
   const links = isAdmin ? [...LINKS, { href: '/admin', label: 'Admin' }] : LINKS;
 
   return (
-    <nav className="overflow-x-auto" aria-label="Operator sections">
-      <ul className="flex min-w-max gap-1">
+    <nav aria-label="Operator sections">
+      <ul className="flex flex-wrap gap-1">
         {links.map((link) => {
           const active = link.href === '/operator' ? pathname === '/operator' : pathname.startsWith(link.href);
           return (
@@ -28,7 +28,7 @@ export function OperatorNav({ isAdmin }: { isAdmin: boolean }) {
               <Link
                 href={link.href}
                 aria-current={active ? 'page' : undefined}
-                className={`block rounded-full px-3 py-1.5 text-sm ${
+                className={`block min-h-10 rounded-full px-3 py-2 text-sm ${
                   active ? 'bg-[#c4a265] font-semibold text-[#0e1424]' : 'text-white/70 hover:bg-white/10 hover:text-white'
                 }`}
               >

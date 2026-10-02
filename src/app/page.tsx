@@ -1,5 +1,5 @@
 ﻿import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { Suspense, type ReactNode } from 'react';
 
 import { StatusBadge, formatDelay, formatEta } from '@/components/trip-status';
 import { AppShell, ErrorState } from '@/components/app-shell';
@@ -7,11 +7,11 @@ import {
   SUPABASE_CONFIGURED,
   arrivalsAtStop,
   busesApproaching,
+  fleetOverview,
   listStops,
-  operatorTrips,
   scheduleBoard,
 } from '@/lib/data/transit';
-import type { Stop, StopArrival, TripLive } from '@/lib/types/database';
+import type { FleetOverview, Stop, StopArrival, TripLive } from '@/lib/types/database';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +20,7 @@ interface HomeProps {
 }
 
 export default async function Home({ searchParams }: HomeProps) {
-  const { origin, destination, stop } = await searchParams;
+  const params = await searchParams;
 
   if (!SUPABASE_CONFIGURED) {
     return (
@@ -30,58 +30,85 @@ export default async function Home({ searchParams }: HomeProps) {
     );
   }
 
+  return (
+    <AppShell title="Find a bus">
+      <Suspense fallback={<RideSkeleton />}>
+        <RideBoard destination={params.destination} origin={params.origin} stop={params.stop} />
+      </Suspense>
+    </AppShell>
+  );
+}
+
+async function RideBoard({
+  origin,
+  destination,
+  stop,
+}: {
+  origin?: string;
+  destination?: string;
+  stop?: string;
+}) {
   let stops: Stop[] = [];
   let schedules: Awaited<ReturnType<typeof scheduleBoard>> = [];
-  let running: TripLive[] = [];
+  let overview: FleetOverview | null = null;
   let arrivals: StopArrival[] = [];
   let loadError: string | null = null;
-  try {
-    [stops, schedules, running] = await Promise.all([listStops(), scheduleBoard(), operatorTrips()]);
-    if (stop) arrivals = await arrivalsAtStop(stop);
-  } catch (error) {
-    loadError = error instanceof Error ? error.message : 'Could not reach the timetable.';
-  }
-
-  if (loadError) {
-    return (
-      <AppShell title="Find a bus">
-        <ErrorState title="Could not load stops" detail={loadError} />
-      </AppShell>
-    );
-  }
-
   const searched = Boolean(origin && destination);
   const sameStop = searched && origin === destination;
-  const originName = stops.find((item) => item.id === origin)?.name;
-  const destinationName = stops.find((item) => item.id === destination)?.name;
-
   let buses: { trip: TripLive; etaMinutes: number | null; approaching: boolean }[] = [];
   let heading = 'Choose a bus';
   let note: string | null = null;
   let searchError: string | null = null;
 
-  if (searched && !sameStop) {
-    try {
-      const ride = await busesApproaching(origin!, destination!);
-      if (ride.buses.length > 0) {
-        buses = ride.buses.map((bus) => ({ ...bus, approaching: true }));
+  try {
+    const [loadedStops, loadedSchedules, loadedOverview, loadedArrivals, loadedRide] = await Promise.all([
+      listStops(),
+      scheduleBoard(),
+      fleetOverview().catch(() => null),
+      stop ? arrivalsAtStop(stop) : Promise.resolve([] as StopArrival[]),
+      searched && !sameStop
+        ? busesApproaching(origin!, destination!).then(
+            (ride) => ({ ride, error: null as string | null }),
+            (error: unknown) => ({
+              ride: null,
+              error: error instanceof Error ? error.message : 'Search failed.',
+            }),
+          )
+        : Promise.resolve({ ride: null, error: null as string | null }),
+    ]);
+    stops = loadedStops;
+    schedules = loadedSchedules;
+    overview = loadedOverview;
+    arrivals = loadedArrivals;
+    searchError = loadedRide.error;
+    const originName = stops.find((item) => item.id === origin)?.name;
+    const destinationName = stops.find((item) => item.id === destination)?.name;
+    if (loadedRide.ride) {
+      if (loadedRide.ride.buses.length > 0) {
+        buses = loadedRide.ride.buses.map((bus) => ({ ...bus, approaching: true }));
         heading = `Approaching ${originName ?? 'your stop'}`;
         note = `These buses have not reached ${originName ?? 'your stop'} yet, and they continue to ${destinationName ?? 'your destination'}. The time is until they arrive at ${originName ?? 'your stop'}.`;
       } else {
         heading = `Approaching ${originName ?? 'your stop'}`;
-        note = ride.matchedRoute
+        note = loadedRide.ride.matchedRoute
           ? `No bus is still on its way to ${originName ?? 'your stop'} before continuing to ${destinationName ?? 'your destination'}. Buses already past that stop are not listed.`
           : `No running bus connects ${originName ?? 'those stops'} and then continues to ${destinationName ?? 'the destination'}.`;
       }
-    } catch (error) {
-      searchError = error instanceof Error ? error.message : 'Search failed.';
     }
+  } catch (error) {
+    loadError = error instanceof Error ? error.message : 'Could not reach the timetable.';
   }
 
+  if (loadError) {
+    return <ErrorState title="Could not load stops" detail={loadError} />;
+  }
+
+  const originName = stops.find((item) => item.id === origin)?.name;
+  const destinationName = stops.find((item) => item.id === destination)?.name;
+
   return (
-    <AppShell title="Find a bus">
-      <div className="grid items-start gap-6 lg:grid-cols-[22rem_minmax(0,1fr)]">
-        <div className="flex flex-col gap-4 lg:sticky lg:top-6">
+      <div className="grid w-full min-w-0 grid-cols-1 items-start gap-6 md:grid-cols-[minmax(16rem,22rem)_minmax(0,1fr)]">
+        <div className="flex min-w-0 flex-col gap-4 md:sticky md:top-6">
           <form className="flex flex-col gap-4 rounded-3xl bg-white p-5 shadow-[0_20px_50px_-30px_rgba(14,20,36,0.45)] ring-1 ring-black/5">
             <div>
               <p className="text-[11px] font-semibold tracking-[0.22em] text-[#9a7b3c] uppercase">Plan a ride</p>
@@ -110,7 +137,7 @@ export default async function Home({ searchParams }: HomeProps) {
             <p className="text-sm leading-5 text-slate-500">How long until the next buses reach this stop.</p>
             <form className="flex flex-col gap-2">
               <select
-                className="min-w-0 rounded-2xl border border-black/10 bg-[#f7f4ee] px-3 py-2.5 text-sm outline-none focus:border-[#c4a265] focus:bg-white"
+                className="w-full min-w-0 rounded-2xl border border-black/10 bg-[#f7f4ee] px-3 py-2.5 text-base outline-none focus:border-[#c4a265] focus:bg-white sm:text-sm"
                 defaultValue={stop ?? ''}
                 name="stop"
                 required
@@ -138,8 +165,8 @@ export default async function Home({ searchParams }: HomeProps) {
                     className="flex items-center justify-between gap-3 rounded-2xl bg-[#f7f4ee] px-3 py-2.5"
                     href={`/track/${arrival.trip_id}?destination=${stop}`}
                   >
-                    <span>
-                      <span className="block text-sm font-medium">{arrival.route_name}</span>
+                    <span className="min-w-0">
+                      <span className="block break-words text-sm font-medium">{arrival.route_name}</span>
                       <span className="text-sm text-slate-500">
                         {formatEta(arrival.eta_minutes)}
                         {Number(arrival.projected_delay_minutes) >= 5 ? ' · Delayed' : ''}
@@ -159,7 +186,7 @@ export default async function Home({ searchParams }: HomeProps) {
           {searched && !sameStop && !searchError ? (
             <section className="flex flex-col gap-3">
               <div>
-                <h2 className="font-display text-3xl leading-none">{heading}</h2>
+                <h2 className="font-display text-2xl leading-none sm:text-3xl">{heading}</h2>
                 {note ? (
                   <p className="mt-2 text-sm text-slate-500">{note}</p>
                 ) : (
@@ -185,10 +212,10 @@ export default async function Home({ searchParams }: HomeProps) {
               </ul>
             </section>
           ) : (
-            <section className="relative overflow-hidden rounded-3xl bg-[#0e1424] p-7 text-white shadow-[0_30px_60px_-36px_rgba(14,20,36,0.8)] sm:p-9">
-              <div className="pointer-events-none absolute -top-16 -right-10 h-48 w-48 rounded-full bg-[#c4a265]/30 blur-3xl" />
+            <section className="relative overflow-hidden rounded-3xl bg-[#0e1424] p-5 text-white shadow-[0_30px_60px_-36px_rgba(14,20,36,0.8)] sm:p-7 lg:p-9">
+              <div className="pointer-events-none absolute -top-16 right-0 h-48 w-48 rounded-full bg-[#c4a265]/30 blur-3xl" />
               <p className="text-[11px] font-semibold tracking-[0.22em] text-[#c4a265] uppercase">Live network</p>
-              <h2 className="font-display mt-3 max-w-lg text-4xl leading-[1.05] sm:text-5xl">
+              <h2 className="font-display mt-3 max-w-lg text-3xl leading-[1.05] sm:text-4xl lg:text-5xl">
                 See the bus before you step outside.
               </h2>
               <p className="mt-4 max-w-md text-sm leading-6 text-white/65">
@@ -197,7 +224,7 @@ export default async function Home({ searchParams }: HomeProps) {
               <dl className="mt-8 flex gap-8">
                 <div>
                   <dt className="text-[11px] tracking-wide text-white/45 uppercase">On the road</dt>
-                  <dd className="font-display text-3xl">{running.filter((trip) => trip.status === 'in_progress').length}</dd>
+                  <dd className="font-display text-3xl">{overview?.trips_in_progress ?? 0}</dd>
                 </div>
                 <div>
                   <dt className="text-[11px] tracking-wide text-white/45 uppercase">Routes</dt>
@@ -209,7 +236,7 @@ export default async function Home({ searchParams }: HomeProps) {
 
           <section className="flex flex-col gap-3">
             <h2 className="text-sm font-semibold tracking-wide text-slate-500 uppercase">Schedules</h2>
-            <ul className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+            <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
               {schedules
                 .filter((route) => route.is_active)
                 .map((route) => (
@@ -228,9 +255,18 @@ export default async function Home({ searchParams }: HomeProps) {
           </section>
         </div>
       </div>
-    </AppShell>
   );
 }
+
+function RideSkeleton() {
+  return (
+    <div className="grid w-full min-w-0 grid-cols-1 items-start gap-6 md:grid-cols-[minmax(16rem,22rem)_minmax(0,1fr)]">
+      <div className="h-80 animate-pulse rounded-3xl bg-white" />
+      <div className="h-64 animate-pulse rounded-3xl bg-[#0e1424]" />
+    </div>
+  );
+}
+
 function BusChoice({
   trip,
   origin,
@@ -267,21 +303,21 @@ function BusChoice({
 
   return (
     <Link
-      className="group flex items-center justify-between gap-4 rounded-3xl bg-white px-4 py-4 shadow-sm ring-1 ring-black/5 transition hover:-translate-y-0.5 hover:shadow-md"
+      className="group flex flex-wrap items-center justify-between gap-3 rounded-3xl bg-white px-4 py-4 shadow-sm ring-1 ring-black/5 transition hover:-translate-y-0.5 hover:shadow-md sm:gap-4"
       href={href}
     >
       <span className="flex min-w-0 items-center gap-3">
         <span className="h-12 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: trip.route_color }} />
         <span className="min-w-0">
           <span className="block truncate text-base font-semibold">{trip.bus_label ?? 'Bus'}</span>
-          <span className="mt-1 block truncate text-sm text-slate-500">
+          <span className="mt-1 block text-sm leading-5 break-words text-slate-500">
             {trip.route_name}
             {' · '}
             {when}
             {delay ? ` · ${delay}` : ''}
           </span>
           {approaching && destinationName ? (
-            <span className="mt-0.5 block truncate text-sm text-slate-500">Continues to {destinationName}</span>
+            <span className="mt-0.5 block text-sm leading-5 break-words text-slate-500">Continues to {destinationName}</span>
           ) : null}
         </span>
       </span>
@@ -315,7 +351,7 @@ function StopSelect({
 }) {
   return (
     <select
-      className="rounded-2xl border border-black/10 bg-[#f7f4ee] px-3 py-3 text-sm outline-none focus:border-[#c4a265] focus:bg-white"
+      className="w-full min-w-0 rounded-2xl border border-black/10 bg-[#f7f4ee] px-3 py-3 text-base outline-none focus:border-[#c4a265] focus:bg-white sm:text-sm"
       defaultValue={value ?? ''}
       name={name}
       required

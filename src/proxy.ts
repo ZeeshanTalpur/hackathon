@@ -27,6 +27,11 @@ export async function proxy(request: NextRequest) {
   // so the app still renders before Supabase is configured.
   if (!url || !anonKey) return response;
 
+  // Anonymous visitors have no session to refresh. Skipping the auth round
+  // trip keeps public pages from waiting on Supabase before they can render.
+  const hasSession = request.cookies.getAll().some((cookie) => cookie.name.includes('-auth-token'));
+  if (!hasSession) return response;
+
   const supabase = createServerClient(url, anonKey, {
     cookies: {
       getAll() {

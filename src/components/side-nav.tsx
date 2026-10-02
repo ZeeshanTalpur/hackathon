@@ -25,8 +25,8 @@ export function SideNav({ mobile = false, tone = 'light' }: { mobile?: boolean; 
         return (
           <Link
             key={item.label}
-            className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition ${
-              mobile ? 'justify-center px-2' : ''
+            className={`flex min-w-0 items-center gap-2 rounded-2xl px-2 py-2 text-sm transition sm:gap-3 sm:px-3 sm:py-2.5 ${
+              mobile ? 'justify-center' : ''
             } ${
               active
                 ? dark
@@ -46,7 +46,7 @@ export function SideNav({ mobile = false, tone = 'light' }: { mobile?: boolean; 
               <Icon name={item.icon} />
             </span>
             <span className="min-w-0">
-              <span className="block font-medium leading-none">{item.label}</span>
+              <span className="block truncate font-medium leading-none">{item.label}</span>
               {mobile ? null : (
                 <span className={`mt-1 block text-[11px] ${active && !dark ? 'text-white/60' : dark ? 'text-white/40' : 'text-slate-400'}`}>
                   {item.hint}

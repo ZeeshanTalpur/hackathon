@@ -43,7 +43,7 @@ export default async function AdminPage() {
         <StatCard label="Active alerts" value={overview?.active_alerts ?? 0} />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-3">
         <Card title={`Users & roles (${profiles.length})`} className="lg:col-span-2">
           {profiles.length === 0 ? (
             <Empty>No profiles visible.</Empty>
@@ -60,10 +60,10 @@ export default async function AdminPage() {
               <tbody>
                 {profiles.map((p) => (
                   <tr key={p.id}>
-                    <Td className="font-medium">{p.full_name}</Td>
-                    <Td className="text-xs">{p.email ?? '—'}</Td>
-                    <Td><Badge tone={ROLE_TONE[p.role]}>{p.role}</Badge></Td>
-                    <Td className="text-xs">{p.auth_user_id ? 'Yes' : 'No (seed profile only)'}</Td>
+                    <Td label="Name" className="font-medium">{p.full_name}</Td>
+                    <Td label="Email">{p.email ?? '—'}</Td>
+                    <Td label="Role"><Badge tone={ROLE_TONE[p.role]}>{p.role}</Badge></Td>
+                    <Td label="Login linked">{p.auth_user_id ? 'Yes' : 'No (seed profile only)'}</Td>
                   </tr>
                 ))}
               </tbody>

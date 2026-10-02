@@ -70,13 +70,13 @@ export function NotificationMenu({
       {open ? (
         <div
           aria-label="Notifications"
-          className="absolute right-0 z-50 mt-2 w-[min(28rem,calc(100vw-1.5rem))] overflow-hidden rounded-3xl bg-white text-[#141820] shadow-[0_24px_60px_-24px_rgba(14,20,36,0.55)] ring-1 ring-black/10"
+          className="fixed inset-x-3 z-50 mt-2 max-h-[min(32rem,70dvh)] overflow-hidden rounded-3xl bg-white text-[#141820] shadow-[0_24px_60px_-24px_rgba(14,20,36,0.55)] ring-1 ring-black/10 sm:absolute sm:inset-x-auto sm:right-0 sm:w-[min(28rem,calc(100vw-2rem))]"
           id={panelId}
           role="dialog"
         >
           <div className="flex items-center justify-between gap-4 border-b border-black/5 px-5 py-4">
             <h2 className="font-display text-2xl leading-none">Notifications</h2>
-            <button className="text-sm font-medium text-slate-500" onClick={() => setOpen(false)} type="button">
+            <button className="min-h-11 px-2 text-sm font-medium text-slate-500" onClick={() => setOpen(false)} type="button">
               Close
             </button>
           </div>
