@@ -54,16 +54,16 @@ export default async function BusesPage() {
               const live = fleetByBus.get(bus.id);
               return (
                 <tr key={bus.id}>
-                  <Td>
+                  <Td label="Bus">
                     <span className="font-medium">{bus.label ?? bus.registration_no}</span>
                     <span className="block text-xs opacity-60">
                       {bus.registration_no} · {bus.capacity} seats{bus.has_ac ? ' · AC' : ''}
                     </span>
                   </Td>
-                  <Td>
-                    <div className="flex flex-col gap-1">
+                  <Td label="Status">
+                    <div className="flex flex-col gap-2">
                       <Badge tone={busStatusTone(bus.status)}>{titleCase(bus.status)}</Badge>
-                      <ActionForm action={updateBusStatus}>
+                      <ActionForm action={updateBusStatus} className="flex w-full flex-col items-stretch gap-2">
                         <input type="hidden" name="bus_id" value={bus.id} />
                         <select name="status" defaultValue={bus.status} className={inputClass} aria-label={`Status for ${bus.registration_no}`}>
                           {STATUSES.map((s) => (
@@ -74,13 +74,13 @@ export default async function BusesPage() {
                       </ActionForm>
                     </div>
                   </Td>
-                  <Td>
-                    <ActionForm action={assignBusDriver}>
+                  <Td label="Driver">
+                    <ActionForm action={assignBusDriver} className="flex w-full flex-col items-stretch gap-2">
                       <input type="hidden" name="bus_id" value={bus.id} />
                       <select
                         name="driver_id"
                         defaultValue={bus.assigned_driver_id ?? ''}
-                        className={`${inputClass} max-w-[11rem]`}
+                        className={inputClass}
                         aria-label={`Driver for ${bus.registration_no}`}
                       >
                         <option value="">Unassigned</option>
@@ -93,7 +93,7 @@ export default async function BusesPage() {
                       <SubmitButton>Assign</SubmitButton>
                     </ActionForm>
                   </Td>
-                  <Td>
+                  <Td label="Route">
                     {live?.trip_id ? (
                       <>
                         <RouteChip code={live.route_code} color={live.route_color} />
@@ -103,7 +103,7 @@ export default async function BusesPage() {
                       <span className="text-xs opacity-60">Not on a trip</span>
                     )}
                   </Td>
-                  <Td>
+                  <Td label="GPS">
                     {live?.trip_id ? (
                       <Badge tone={gpsLabel(live.gps_status).tone}>{gpsLabel(live.gps_status).text}</Badge>
                     ) : null}
@@ -119,18 +119,18 @@ export default async function BusesPage() {
       </Card>
 
       <Card title="Add a bus">
-        <ActionForm action={createBus} className="flex flex-wrap items-end gap-3">
-          <label className="flex flex-col gap-1 text-sm">
+        <ActionForm action={createBus} className="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <label className="flex min-w-0 flex-col gap-1 text-sm">
             Registration
             <input name="registration_no" required placeholder="DEMO-KHI-111" className={inputClass} />
           </label>
-          <label className="flex flex-col gap-1 text-sm">
+          <label className="flex min-w-0 flex-col gap-1 text-sm">
             Label
             <input name="label" placeholder="Bus 111" className={inputClass} />
           </label>
           <label className="flex flex-col gap-1 text-sm">
             Capacity
-            <input name="capacity" type="number" min={1} max={200} defaultValue={45} className={`${inputClass} w-24`} />
+            <input name="capacity" type="number" min={1} max={200} defaultValue={45} className={inputClass} />
           </label>
           <SubmitButton primary>Add bus</SubmitButton>
         </ActionForm>

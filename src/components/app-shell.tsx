@@ -35,14 +35,14 @@ export function AppShell({
         <header className="relative z-30 border-b border-black/5 bg-[#f3efe6]/90 pt-[env(safe-area-inset-top)] backdrop-blur">
           <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
             <div className="min-w-0">
-              <p className="font-display text-lg leading-none lg:hidden">Daily Transit</p>
+              {bleed ? null : <p className="font-display text-lg leading-none lg:hidden">Daily Transit</p>}
               <h1 className="truncate text-lg font-semibold tracking-tight sm:text-2xl">{title}</h1>
             </div>
             <Suspense fallback={<span aria-hidden className="inline-block h-11 w-11 shrink-0 rounded-2xl bg-black/5" />}>
               <NotificationBell />
             </Suspense>
           </div>
-          <div className="px-3 pb-3 lg:hidden">
+          <div className={bleed ? 'px-3 pb-2 lg:hidden' : 'px-3 pb-3 lg:hidden'}>
             <SideNav mobile />
           </div>
         </header>

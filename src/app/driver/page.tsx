@@ -28,7 +28,7 @@ export default async function DriverPage() {
       <div className="flex items-center justify-between text-sm text-slate-500">
         <p>{session.profile?.full_name ?? 'Driver'}</p>
         <form action="/auth/sign-out" method="post">
-          <button className="text-slate-500 underline" type="submit">
+          <button className="min-h-11 px-2 text-slate-500 underline" type="submit">
             Sign out
           </button>
         </form>

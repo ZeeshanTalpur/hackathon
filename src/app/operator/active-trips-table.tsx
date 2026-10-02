@@ -29,24 +29,24 @@ export function ActiveTripsTable({ trips }: { trips: LiveTrip[] }) {
           const eta = t.nextStopEta;
           return (
             <tr key={t.trip_id}>
-              <Td>
+              <Td label="Route">
                 <RouteChip code={t.route_code} color={t.route_color} />
                 <span className="block text-xs opacity-60">{t.route_name} · {t.direction}</span>
               </Td>
-              <Td>
+              <Td label="Bus / driver">
                 <span className="font-medium">{t.bus_label ?? t.registration_no}</span>
                 <span className="block text-xs opacity-60">{t.driver_name ?? 'No driver'}</span>
-                <Link className="text-xs underline" href={`/track/${t.trip_id}`}>
+                <Link className="text-sm underline" href={`/track/${t.trip_id}`}>
                   Live tracking
                 </Link>
               </Td>
-              <Td>
+              <Td label="Status">
                 <div className="flex flex-col items-start gap-1">
                   <Badge tone={delay.tone}>{delay.text}</Badge>
                   <Badge tone={gps.tone}>{gps.text}</Badge>
                 </div>
               </Td>
-              <Td>
+              <Td label="Next stop">
                 <span className="font-medium">{t.next_stop_name ?? '—'}</span>
                 {eta ? (
                   <span className="block text-xs opacity-70">
@@ -58,7 +58,7 @@ export function ActiveTripsTable({ trips }: { trips: LiveTrip[] }) {
                   <span className="block text-xs opacity-60">No ETA</span>
                 )}
               </Td>
-              <Td>
+              <Td label="Location">
                 {link ? (
                   <a className="text-xs underline" href={link} target="_blank" rel="noreferrer">
                     {Number(t.latitude).toFixed(4)}, {Number(t.longitude).toFixed(4)}
@@ -70,7 +70,7 @@ export function ActiveTripsTable({ trips }: { trips: LiveTrip[] }) {
                   {Number(t.progress_pct)}% of route{t.speed_kmh !== null ? ` · ${Math.round(Number(t.speed_kmh))} km/h` : ''}
                 </span>
               </Td>
-              <Td><TimeAgo iso={t.location_recorded_at} staleAfterSec={GPS_STALE_SEC} /></Td>
+              <Td label="Last GPS"><TimeAgo iso={t.location_recorded_at} staleAfterSec={GPS_STALE_SEC} /></Td>
             </tr>
           );
         })}

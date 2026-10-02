@@ -108,7 +108,9 @@ function Overlays({
     tip.style.padding = '6px 10px';
     tip.style.fontSize = '12px';
     tip.style.lineHeight = '1.25';
-    tip.style.whiteSpace = 'nowrap';
+    tip.style.whiteSpace = 'normal';
+    tip.style.maxWidth = '11rem';
+    tip.style.textAlign = 'center';
     tip.style.boxShadow = '0 10px 24px rgba(14,20,36,0.35)';
     tip.style.border = '1px solid rgba(196,162,101,0.75)';
     const tipName = document.createElement('div');
@@ -137,6 +139,16 @@ function Overlays({
     hover.setMap(map);
 
     const listeners: google.maps.MapsEventListener[] = [];
+    let pinnedStopId: string | null = null;
+
+    function showTip(marker: google.maps.Marker, stop: (typeof path)[number]) {
+      tipLatLng = marker.getPosition() ?? null;
+      tipName.textContent = stop.stop_name;
+      tipEta.textContent = tipByStop.get(stop.stop_id) ?? '';
+      tip.style.display = 'block';
+      hover.draw();
+    }
+
     stopMarkersRef.current.forEach((m) => m.setMap(null));
     stopMarkersRef.current = path.map((stop) => {
       const isEndpoint = stop.stop_id === originStopId || stop.stop_id === destinationStopId;
@@ -148,7 +160,7 @@ function Overlays({
         zIndex: isEndpoint || isNext ? 3 : 1,
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
-          scale: isEndpoint ? 7 : isNext ? 6 : 4,
+          scale: isEndpoint ? 9 : isNext ? 8 : 6,
           fillColor: isEndpoint ? '#111827' : isNext ? '#f59e0b' : '#ffffff',
           fillOpacity: 1,
           strokeColor: routeColor || '#2563eb',
@@ -158,20 +170,37 @@ function Overlays({
 
       listeners.push(
         marker.addListener('mouseover', () => {
-          tipLatLng = marker.getPosition() ?? null;
-          tipName.textContent = stop.stop_name;
-          tipEta.textContent = tipByStop.get(stop.stop_id) ?? '';
-          tip.style.display = 'block';
-          hover.draw();
+          if (pinnedStopId) return;
+          showTip(marker, stop);
         }),
       );
       listeners.push(
         marker.addListener('mouseout', () => {
+          if (pinnedStopId) return;
           tip.style.display = 'none';
+        }),
+      );
+      listeners.push(
+        marker.addListener('click', (event: google.maps.MapMouseEvent) => {
+          event.stop();
+          if (pinnedStopId === stop.stop_id) {
+            pinnedStopId = null;
+            tip.style.display = 'none';
+            return;
+          }
+          pinnedStopId = stop.stop_id;
+          showTip(marker, stop);
         }),
       );
       return marker;
     });
+
+    listeners.push(
+      map.addListener('click', () => {
+        pinnedStopId = null;
+        tip.style.display = 'none';
+      }),
+    );
 
     if (!didFitRef.current) {
       const bounds = new google.maps.LatLngBounds();

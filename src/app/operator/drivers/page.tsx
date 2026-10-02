@@ -45,16 +45,16 @@ export default async function DriversPage() {
               const trip = tripByDriver.get(d.id);
               return (
                 <tr key={d.id}>
-                  <Td>
+                  <Td label="Driver">
                     <span className="font-medium">{d.full_name}</span>
                     <span className="block text-xs opacity-60">
                       Licence {d.license_no}{d.rating !== null ? ` · ★ ${Number(d.rating)}` : ''}
                     </span>
                   </Td>
-                  <Td>
-                    <div className="flex flex-col gap-1">
+                  <Td label="Status">
+                    <div className="flex flex-col gap-2">
                       <Badge tone={TONE[d.status]}>{titleCase(d.status)}</Badge>
-                      <ActionForm action={updateDriverStatus}>
+                      <ActionForm action={updateDriverStatus} className="flex w-full flex-col items-stretch gap-2">
                         <input type="hidden" name="driver_id" value={d.id} />
                         <select name="status" defaultValue={d.status} className={inputClass} aria-label={`Status for ${d.full_name}`}>
                           {STATUSES.map((s) => (
@@ -65,7 +65,7 @@ export default async function DriversPage() {
                       </ActionForm>
                     </div>
                   </Td>
-                  <Td>
+                  <Td label="Assigned bus">
                     {bus ? (
                       <>
                         <span className="font-medium">{bus.label ?? bus.registration_no}</span>
@@ -75,7 +75,7 @@ export default async function DriversPage() {
                       <span className="text-xs opacity-60">No bus</span>
                     )}
                   </Td>
-                  <Td>
+                  <Td label="Current trip">
                     {trip ? (
                       <div className="flex flex-col items-start gap-1">
                         <RouteChip code={trip.route_code} color={trip.route_color} />

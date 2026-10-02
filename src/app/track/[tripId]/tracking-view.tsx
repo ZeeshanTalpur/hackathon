@@ -153,7 +153,7 @@ export function TrackingView({
 
   return (
     <div className="absolute inset-0 flex min-h-0 flex-col lg:block">
-      <section className="z-10 max-h-[42%] shrink-0 overflow-auto bg-[#0e1424] p-4 text-white lg:absolute lg:top-4 lg:left-4 lg:max-h-[calc(100%-2rem)] lg:w-[min(100%-2rem,22rem)] lg:rounded-3xl lg:bg-[#0e1424]/95 lg:p-5 lg:shadow-2xl lg:ring-1 lg:ring-white/10 lg:backdrop-blur">
+      <section className="z-10 max-h-[38%] shrink-0 overflow-auto bg-[#0e1424] p-3 text-white sm:p-4 lg:absolute lg:top-4 lg:left-4 lg:max-h-[calc(100%-2rem)] lg:w-[min(100%-2rem,22rem)] lg:rounded-3xl lg:bg-[#0e1424]/95 lg:p-5 lg:shadow-2xl lg:ring-1 lg:ring-white/10 lg:backdrop-blur">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs text-slate-400">{trip.bus_label ?? 'Bus'}</p>
@@ -180,7 +180,7 @@ export function TrackingView({
           </p>
         ) : (
           <div className="mt-4">
-            <p className="font-display text-4xl leading-none tracking-tight sm:text-5xl">
+            <p className="font-display text-3xl leading-none tracking-tight sm:text-5xl">
               {formatEta(headlineEta?.eta_minutes)}
             </p>
             <p className="mt-1 text-sm text-slate-300">
@@ -195,7 +195,7 @@ export function TrackingView({
           </div>
         )}
 
-        <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-white/10 pt-3 text-sm">
+        <dl className="mt-3 grid grid-cols-2 gap-3 border-t border-white/10 pt-3 text-sm">
           <div>
             <dt className="text-xs text-slate-400">Next stop</dt>
             <dd className="break-words">{trip.next_stop_name ?? '—'}</dd>
@@ -208,7 +208,7 @@ export function TrackingView({
         <ConnectionNote connection={connection} fetchError={fetchError} />
       </section>
 
-      <div className="relative min-h-40 w-full min-w-0 flex-1 lg:absolute lg:inset-0 lg:min-h-0">
+      <div className="relative min-h-0 w-full min-w-0 flex-1 lg:absolute lg:inset-0">
         <div className="absolute inset-0">
         <TransitMap
           fill
@@ -233,7 +233,7 @@ export function TrackingView({
         </div>
       </div>
 
-      <aside className="z-10 max-h-[34%] shrink-0 overflow-auto bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-16px_rgba(14,20,36,0.4)] lg:absolute lg:top-4 lg:right-4 lg:bottom-auto lg:max-h-[calc(100%-2rem)] lg:w-80 lg:rounded-3xl lg:bg-white/95 lg:pb-0 lg:shadow-2xl lg:ring-1 lg:ring-black/5 lg:backdrop-blur">
+      <aside className="z-10 max-h-32 shrink-0 overflow-auto bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-16px_rgba(14,20,36,0.4)] sm:max-h-44 lg:absolute lg:top-4 lg:right-4 lg:bottom-auto lg:max-h-[calc(100%-2rem)] lg:w-80 lg:rounded-3xl lg:bg-white/95 lg:pb-0 lg:shadow-2xl lg:ring-1 lg:ring-black/5 lg:backdrop-blur">
         <p className="sticky top-0 border-b border-black/5 bg-white px-4 py-2.5 text-sm font-semibold lg:px-5 lg:py-4">Stops ahead</p>
         {upcoming.length === 0 ? (
           <p className="px-4 py-3 text-sm text-slate-500">

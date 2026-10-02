@@ -107,7 +107,7 @@ async function RideBoard({
   const destinationName = stops.find((item) => item.id === destination)?.name;
 
   return (
-      <div className="grid min-w-0 items-start gap-6 md:grid-cols-[minmax(16rem,22rem)_minmax(0,1fr)]">
+      <div className="grid w-full min-w-0 grid-cols-1 items-start gap-6 md:grid-cols-[minmax(16rem,22rem)_minmax(0,1fr)]">
         <div className="flex min-w-0 flex-col gap-4 md:sticky md:top-6">
           <form className="flex flex-col gap-4 rounded-3xl bg-white p-5 shadow-[0_20px_50px_-30px_rgba(14,20,36,0.45)] ring-1 ring-black/5">
             <div>
@@ -165,8 +165,8 @@ async function RideBoard({
                     className="flex items-center justify-between gap-3 rounded-2xl bg-[#f7f4ee] px-3 py-2.5"
                     href={`/track/${arrival.trip_id}?destination=${stop}`}
                   >
-                    <span>
-                      <span className="block text-sm font-medium">{arrival.route_name}</span>
+                    <span className="min-w-0">
+                      <span className="block break-words text-sm font-medium">{arrival.route_name}</span>
                       <span className="text-sm text-slate-500">
                         {formatEta(arrival.eta_minutes)}
                         {Number(arrival.projected_delay_minutes) >= 5 ? ' · Delayed' : ''}
@@ -260,7 +260,7 @@ async function RideBoard({
 
 function RideSkeleton() {
   return (
-    <div className="grid items-start gap-6 md:grid-cols-[minmax(16rem,22rem)_minmax(0,1fr)]">
+    <div className="grid w-full min-w-0 grid-cols-1 items-start gap-6 md:grid-cols-[minmax(16rem,22rem)_minmax(0,1fr)]">
       <div className="h-80 animate-pulse rounded-3xl bg-white" />
       <div className="h-64 animate-pulse rounded-3xl bg-[#0e1424]" />
     </div>
@@ -310,14 +310,14 @@ function BusChoice({
         <span className="h-12 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: trip.route_color }} />
         <span className="min-w-0">
           <span className="block truncate text-base font-semibold">{trip.bus_label ?? 'Bus'}</span>
-          <span className="mt-1 block truncate text-sm text-slate-500">
+          <span className="mt-1 block text-sm leading-5 break-words text-slate-500">
             {trip.route_name}
             {' · '}
             {when}
             {delay ? ` · ${delay}` : ''}
           </span>
           {approaching && destinationName ? (
-            <span className="mt-0.5 block truncate text-sm text-slate-500">Continues to {destinationName}</span>
+            <span className="mt-0.5 block text-sm leading-5 break-words text-slate-500">Continues to {destinationName}</span>
           ) : null}
         </span>
       </span>

@@ -19,11 +19,16 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
+html,
+body {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), "Segoe UI", sans-serif;
-  overflow-x: clip;
 }
 
 input,
@@ -31,6 +36,47 @@ select,
 textarea {
   max-width: 100%;
   min-width: 0;
+}
+
+/* Phone tables become a stack of labeled fields. Wide screens keep the table. */
+@media (max-width: 767px) {
+  .stack-table table {
+    min-width: 0;
+  }
+
+  .stack-table thead {
+    display: none;
+  }
+
+  .stack-table tr {
+    display: block;
+    margin-bottom: 0.75rem;
+    border-radius: 1rem;
+    background: #f7f4ee;
+    padding: 0.35rem 0.85rem;
+  }
+
+  .stack-table td {
+    display: block;
+    border: 0;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid rgb(0 0 0 / 0.06);
+  }
+
+  .stack-table td:last-child {
+    border-bottom: 0;
+  }
+
+  .stack-table td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 0.15rem;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #64748b;
+  }
 }
 
 .font-display {

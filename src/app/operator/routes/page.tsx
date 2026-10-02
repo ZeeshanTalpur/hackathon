@@ -25,7 +25,7 @@ export default async function RoutesPage() {
 
       {details.error || ref.error ? <ErrorNote message={(details.error ?? ref.error) as string} /> : null}
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2">
         {details.summary.map((route) => {
           const stopsFor = (direction: TripDirection) =>
             details.routeStops
@@ -42,8 +42,8 @@ export default async function RoutesPage() {
               }
               actions={<Badge tone={route.is_active ? 'good' : 'bad'}>{route.is_active ? 'Active' : 'Suspended'}</Badge>}
             >
-              <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-3">
-                <div><dt className="text-xs opacity-60">From → to</dt><dd>{route.origin_stop_name} → {route.destination_stop_name}</dd></div>
+              <dl className="grid grid-cols-1 gap-x-4 gap-y-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
+                <div className="min-w-0"><dt className="text-xs opacity-60">From → to</dt><dd className="break-words">{route.origin_stop_name} → {route.destination_stop_name}</dd></div>
                 <div><dt className="text-xs opacity-60">Length / time</dt><dd>{Number(route.distance_km)} km · {route.expected_duration_min} min</dd></div>
                 <div><dt className="text-xs opacity-60">Stops</dt><dd>{route.outbound_stop_count} out · {route.inbound_stop_count} in</dd></div>
                 <div><dt className="text-xs opacity-60">Live trips</dt><dd>{route.active_trip_count}</dd></div>
@@ -56,15 +56,15 @@ export default async function RoutesPage() {
                 if (!rows.length) return null;
                 return (
                   <details key={direction} className="mt-3 text-sm">
-                    <summary className="cursor-pointer select-none font-medium">
+                    <summary className="cursor-pointer select-none py-2 font-medium">
                       {direction === 'outbound' ? 'Outbound' : 'Inbound'} stop order ({rows.length})
                     </summary>
                     <ol className="mt-2 flex flex-col gap-1">
                       {rows.map((rs) => (
-                        <li key={rs.id} className="flex items-baseline gap-2">
+                        <li key={rs.id} className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                           <span className="w-6 text-right text-xs tabular-nums opacity-60">{rs.stop_order}.</span>
-                          <span className={rs.is_major_stop ? 'font-medium' : ''}>{stopById.get(rs.stop_id)?.name ?? rs.stop_id}</span>
-                          <span className="ml-auto whitespace-nowrap text-xs tabular-nums opacity-60">
+                          <span className={`min-w-0 flex-1 ${rs.is_major_stop ? 'font-medium' : ''}`}>{stopById.get(rs.stop_id)?.name ?? rs.stop_id}</span>
+                          <span className="text-xs tabular-nums opacity-60">
                             {Number(rs.distance_from_start_km)} km · +{rs.scheduled_offset_min} min
                           </span>
                         </li>
@@ -85,13 +85,13 @@ export default async function RoutesPage() {
       </div>
 
       <Card title={`All stops (${ref.stops.length})`}>
-        <ul className="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="grid min-w-0 grid-cols-1 gap-x-6 gap-y-1 text-sm sm:grid-cols-2 lg:grid-cols-3">
           {ref.stops.map((s) => (
             <li key={s.id} className="flex items-baseline justify-between gap-2">
-              <span>
+              <span className="min-w-0 break-words">
                 {s.name} {!s.is_active ? <Badge tone="bad">Inactive</Badge> : null}
               </span>
-              <span className="text-xs opacity-60">{s.area ?? s.code}</span>
+              <span className="shrink-0 text-xs opacity-60">{s.area ?? s.code}</span>
             </li>
           ))}
         </ul>

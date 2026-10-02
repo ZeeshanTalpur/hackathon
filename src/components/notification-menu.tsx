@@ -76,7 +76,7 @@ export function NotificationMenu({
         >
           <div className="flex items-center justify-between gap-4 border-b border-black/5 px-5 py-4">
             <h2 className="font-display text-2xl leading-none">Notifications</h2>
-            <button className="text-sm font-medium text-slate-500" onClick={() => setOpen(false)} type="button">
+            <button className="min-h-11 px-2 text-sm font-medium text-slate-500" onClick={() => setOpen(false)} type="button">
               Close
             </button>
           </div>

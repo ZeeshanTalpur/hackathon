@@ -26,7 +26,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
   return (
     <main className="flex min-h-dvh items-center justify-center bg-[#0e1424] px-3 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 sm:py-8">
-      <div className="grid w-full max-w-5xl overflow-hidden rounded-3xl bg-white shadow-[0_40px_80px_-32px_rgba(0,0,0,0.65)] sm:rounded-[2rem] lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
+      <div className="grid w-full min-w-0 max-w-5xl grid-cols-1 overflow-hidden rounded-3xl bg-white shadow-[0_40px_80px_-32px_rgba(0,0,0,0.65)] sm:rounded-[2rem] lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
         <section className="hidden flex-col justify-between gap-10 bg-[#141b2e] p-8 text-white sm:p-10 lg:flex">
           <Link href="/">
             <span className="font-display block text-4xl leading-none">Daily</span>
@@ -87,7 +87,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <div className="mt-6 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-500">
               <p className="min-w-0 break-words">Signed in as {session.profile?.full_name ?? session.email}.</p>
               <form action="/auth/sign-out" method="post">
-                <button className="font-medium text-[#0e1424]" type="submit">
+                <button className="min-h-11 px-2 font-medium text-[#0e1424]" type="submit">
                   Sign out
                 </button>
               </form>
