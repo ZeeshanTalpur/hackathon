@@ -4,33 +4,55 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const ITEMS = [
-  { href: '/', label: 'Ride', icon: 'ride' },
-  { href: '/login?as=driver', label: 'Drive', icon: 'drive' },
-  { href: '/login?as=operator', label: 'Desk', icon: 'desk' },
+  { href: '/', label: 'Ride', hint: 'Find a bus', icon: 'ride' },
+  { href: '/login?as=driver', label: 'Drive', hint: 'Share location', icon: 'drive' },
+  { href: '/login?as=operator', label: 'Desk', hint: 'Watch the fleet', icon: 'desk' },
 ] as const;
 
-export function SideNav({ mobile = false }: { mobile?: boolean }) {
+export function SideNav({ mobile = false, tone = 'light' }: { mobile?: boolean; tone?: 'light' | 'dark' }) {
   const path = usePathname();
+  const dark = tone === 'dark';
 
   return (
-    <nav className={mobile ? 'grid grid-cols-3 gap-1' : 'flex flex-col gap-1'}>
+    <nav className={mobile ? 'grid grid-cols-3 gap-1' : 'flex flex-col gap-1'} aria-label="Main">
       {ITEMS.map((item) => {
         const active =
           item.label === 'Drive'
             ? path.startsWith('/driver')
             : item.label === 'Desk'
-              ? path.startsWith('/operator')
+              ? path.startsWith('/operator') || path.startsWith('/admin')
               : path === '/' || path.startsWith('/track');
         return (
           <Link
             key={item.label}
-            className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm ${
-              mobile ? 'justify-center' : ''
-            } ${active ? 'bg-[#e8f1ff] font-medium text-[#1d4ed8]' : 'text-slate-600 hover:bg-slate-50'}`}
+            className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition ${
+              mobile ? 'justify-center px-2' : ''
+            } ${
+              active
+                ? dark
+                  ? 'bg-white/10 text-white'
+                  : 'bg-[#0e1424] text-white'
+                : dark
+                  ? 'text-white/70 hover:bg-white/5 hover:text-white'
+                  : 'text-slate-600 hover:bg-white'
+            }`}
             href={item.href}
           >
-            <Icon name={item.icon} />
-            {item.label}
+            <span
+              className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl ${
+                active ? (dark ? 'bg-[#c4a265] text-[#0e1424]' : 'bg-[#c4a265] text-[#0e1424]') : dark ? 'bg-white/10 text-white/80' : 'bg-[#f3efe6] text-[#0e1424]'
+              }`}
+            >
+              <Icon name={item.icon} />
+            </span>
+            <span className="min-w-0">
+              <span className="block font-medium leading-none">{item.label}</span>
+              {mobile ? null : (
+                <span className={`mt-1 block text-[11px] ${active && !dark ? 'text-white/60' : dark ? 'text-white/40' : 'text-slate-400'}`}>
+                  {item.hint}
+                </span>
+              )}
+            </span>
           </Link>
         );
       })}

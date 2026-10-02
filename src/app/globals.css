@@ -1,15 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f4f6f9;
-  --foreground: #0f172a;
-  --accent: #2563eb;
+  --background: #f3efe6;
+  --foreground: #141820;
+  --ink: #0e1424;
+  --accent: #c4a265;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
 }
 
 html {
@@ -20,4 +22,13 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), "Segoe UI", sans-serif;
+}
+
+.font-display {
+  font-family: var(--font-display), Georgia, serif;
+}
+
+::selection {
+  background: #e7d7b1;
+  color: #141820;
 }

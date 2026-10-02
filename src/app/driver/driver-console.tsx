@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 
 import { StatusBadge, formatDelay } from '@/components/trip-status';
-import { EmptyState, ErrorState } from '@/components/app-shell';
+import { EmptyState, ErrorState } from '@/components/states';
 import type { TripLive } from '@/lib/types/database';
 
 /**

@@ -8,10 +8,8 @@ import { ROLE_HOME } from '@/lib/roles';
 import type { UserRole } from '@/lib/types/database';
 
 const DEMO_ACCOUNTS: { role: UserRole; email: string; label: string }[] = [
-  { role: 'passenger', email: 'sana.fatima@demo.invalid', label: 'Passenger' },
-  { role: 'driver', email: 'm.asif@demo.invalid', label: 'Driver' },
-  { role: 'operator', email: 'ayesha.siddiqui@demo.invalid', label: 'Operator' },
-  { role: 'admin', email: 'hamza.qureshi@demo.invalid', label: 'Admin' },
+  { role: 'driver', email: 'm.asif@demo.invalid', label: 'Demo driver' },
+  { role: 'operator', email: 'ayesha.siddiqui@demo.invalid', label: 'Demo operator' },
 ];
 
 const DEMO_PASSWORD = 'demo-transit-2026';
@@ -73,18 +71,18 @@ export function LoginForm({ intent = 'ride' }: { intent?: 'ride' | 'driver' | 'o
   }
 
   return (
-    <div className="flex w-full flex-col gap-5">
+    <div className="flex w-full flex-col gap-6">
       {showSignUp ? (
-        <div className="grid grid-cols-2 rounded-full bg-white p-1 text-sm ring-1 ring-slate-200">
+        <div className="grid grid-cols-2 rounded-full bg-white p-1 text-base ring-1 ring-black/10">
           <button
-            className={`rounded-full px-3 py-2 ${mode === 'in' ? 'bg-[#2563eb] text-white' : 'text-slate-600'}`}
+            className={`rounded-full px-3 py-3 ${mode === 'in' ? 'bg-[#0e1424] text-white' : 'text-slate-600'}`}
             onClick={() => setMode('in')}
             type="button"
           >
             Sign in
           </button>
           <button
-            className={`rounded-full px-3 py-2 ${mode === 'up' ? 'bg-[#2563eb] text-white' : 'text-slate-600'}`}
+            className={`rounded-full px-3 py-3 ${mode === 'up' ? 'bg-[#0e1424] text-white' : 'text-slate-600'}`}
             onClick={() => setMode('up')}
             type="button"
           >
@@ -94,30 +92,30 @@ export function LoginForm({ intent = 'ride' }: { intent?: 'ride' | 'driver' | 'o
       ) : null}
 
       {mode === 'up' && showSignUp ? (
-        <form className="flex flex-col gap-3" onSubmit={(event) => void signUp(event)}>
-          <label className="flex flex-col gap-1 text-sm">
+        <form className="flex flex-col gap-4" onSubmit={(event) => void signUp(event)}>
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-slate-600">
             Name
             <input
-              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5"
+              className="rounded-2xl border border-black/10 bg-white px-4 py-3.5 text-base outline-none focus:border-[#c4a265]"
               onChange={(event) => setFullName(event.target.value)}
               required
               value={fullName}
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm">
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-slate-600">
             Email
             <input
-              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5"
+              className="rounded-2xl border border-black/10 bg-white px-4 py-3.5 text-base outline-none focus:border-[#c4a265]"
               onChange={(event) => setEmail(event.target.value)}
               required
               type="email"
               value={email}
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm">
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-slate-600">
             Password
             <input
-              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5"
+              className="rounded-2xl border border-black/10 bg-white px-4 py-3.5 text-base outline-none focus:border-[#c4a265]"
               onChange={(event) => setPassword(event.target.value)}
               required
               type="password"
@@ -125,7 +123,7 @@ export function LoginForm({ intent = 'ride' }: { intent?: 'ride' | 'driver' | 'o
             />
           </label>
           <button
-            className="rounded-2xl bg-[#2563eb] px-3 py-3 text-sm font-medium text-white disabled:opacity-50"
+            className="rounded-2xl bg-[#0e1424] px-4 py-4 text-base font-medium text-white disabled:opacity-50"
             disabled={busy}
             type="submit"
           >
@@ -134,16 +132,16 @@ export function LoginForm({ intent = 'ride' }: { intent?: 'ride' | 'driver' | 'o
         </form>
       ) : (
       <form
-        className="flex flex-col gap-3"
+        className="flex flex-col gap-4"
         onSubmit={(event) => {
           event.preventDefault();
           void signIn(email, password);
         }}
       >
-        <label className="flex flex-col gap-1 text-sm">
+        <label className="flex flex-col gap-1.5 text-sm font-medium text-slate-600">
           Email
           <input
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5"
+            className="rounded-2xl border border-black/10 bg-white px-4 py-3.5 text-base outline-none focus:border-[#c4a265]"
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
@@ -151,10 +149,10 @@ export function LoginForm({ intent = 'ride' }: { intent?: 'ride' | 'driver' | 'o
           />
         </label>
 
-        <label className="flex flex-col gap-1 text-sm">
+        <label className="flex flex-col gap-1.5 text-sm font-medium text-slate-600">
           Password
           <input
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5"
+            className="rounded-2xl border border-black/10 bg-white px-4 py-3.5 text-base outline-none focus:border-[#c4a265]"
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
@@ -163,7 +161,7 @@ export function LoginForm({ intent = 'ride' }: { intent?: 'ride' | 'driver' | 'o
         </label>
 
         <button
-          className="rounded-2xl bg-[#2563eb] px-3 py-3 text-sm font-medium text-white disabled:opacity-50"
+          className="rounded-2xl bg-[#0e1424] px-4 py-4 text-base font-medium text-white disabled:opacity-50"
           type="submit"
           disabled={busy}
         >
@@ -172,31 +170,19 @@ export function LoginForm({ intent = 'ride' }: { intent?: 'ride' | 'driver' | 'o
       </form>
       )}
 
-      <div className="flex flex-col gap-2">
-        <p className="text-sm text-slate-500">Continue as</p>
-        <div className="grid grid-cols-2 gap-2">
-          {DEMO_ACCOUNTS.map((account) => {
-            const highlighted =
-              (intent === 'driver' && account.role === 'driver') ||
-              (intent === 'operator' && (account.role === 'operator' || account.role === 'admin'));
-            return (
-              <button
-                key={account.email}
-                className={`rounded-2xl px-3 py-3 text-sm disabled:opacity-50 ${
-                  highlighted
-                    ? 'bg-[#2563eb] font-medium text-white'
-                    : 'bg-white ring-1 ring-slate-200'
-                }`}
-                type="button"
-                disabled={busy}
-                onClick={() => void signIn(account.email, DEMO_PASSWORD)}
-              >
-                {account.label}
-              </button>
-            );
-          })}
+      {DEMO_ACCOUNTS.filter((account) => account.role === intent).map((account) => (
+        <div className="flex flex-col gap-3" key={account.email}>
+          <p className="text-sm font-semibold tracking-[0.16em] text-[#9a7b3c] uppercase">Demo accounts</p>
+          <button
+            className="rounded-2xl bg-[#0e1424] px-3 py-4 text-base font-semibold text-white disabled:opacity-50"
+            type="button"
+            disabled={busy}
+            onClick={() => void signIn(account.email, DEMO_PASSWORD)}
+          >
+            {account.label}
+          </button>
         </div>
-      </div>
+      ))}
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
     </div>

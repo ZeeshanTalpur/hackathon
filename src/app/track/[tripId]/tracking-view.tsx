@@ -1,10 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { TransitMap } from '@/components/transit-map';
 import { StatusBadge, formatDelay, formatEta } from '@/components/trip-status';
-import { ErrorState } from '@/components/app-shell';
+import { ErrorState } from '@/components/states';
 import { createClient } from '@/lib/supabase/client';
 import type { OperationalState, RoutePathStop, TripLive, TripStopEta } from '@/lib/types/database';
 
@@ -17,6 +17,7 @@ interface TrackingViewProps {
   initialTrip: TripLive;
   initialEtas: TripStopEta[];
   path: RoutePathStop[];
+  boardingStopId: string | null;
   destinationStopId: string | null;
 }
 
@@ -24,6 +25,7 @@ export function TrackingView({
   initialTrip,
   initialEtas,
   path,
+  boardingStopId,
   destinationStopId,
 }: TrackingViewProps) {
   const [trip, setTrip] = useState(initialTrip);
@@ -121,11 +123,29 @@ export function TrackingView({
     trip.latitude !== null &&
     trip.longitude !== null;
   const upcoming = etas.filter((e) => e.stop_order > (trip.last_stop_order ?? 0));
+  const boardingEta = boardingStopId ? upcoming.find((e) => e.stop_id === boardingStopId) : undefined;
   const destinationEta = destinationStopId
     ? upcoming.find((e) => e.stop_id === destinationStopId)
     : undefined;
   const nextEta = upcoming[0];
+  const headlineEta = boardingEta ?? destinationEta ?? nextEta;
   const delay = formatDelay(trip.delay_minutes);
+  const quiet = now !== null && state === 'GPS_UNAVAILABLE';
+  const stopTips = useMemo(() => {
+    const etaByStop = new Map(etas.map((stop) => [stop.stop_id, stop.eta_minutes]));
+    const passedThrough = trip.last_stop_order ?? 0;
+    return path.map((stop) => ({
+      stopId: stop.stop_id,
+      label:
+        stop.stop_order <= passedThrough
+          ? 'Passed'
+          : quiet
+            ? 'No live location'
+            : etaByStop.has(stop.stop_id)
+              ? formatEta(etaByStop.get(stop.stop_id))
+              : 'Later',
+    }));
+  }, [etas, path, quiet, trip.last_stop_order]);
 
   return (
     <div className="absolute inset-0">
@@ -144,11 +164,13 @@ export function TrackingView({
         }
         destinationStopId={destinationStopId}
         nextStopId={trip.next_stop_id}
+        originStopId={boardingStopId}
         path={path}
         routeColor={trip.route_color}
+        stopTips={stopTips}
       />
 
-      <section className="absolute top-3 left-3 z-10 max-h-[calc(100%-6.5rem)] w-[min(100%-1.5rem,22rem)] overflow-auto rounded-xl bg-[#1b2430] p-4 text-white shadow-xl lg:max-h-[calc(100%-1.5rem)]">
+      <section className="absolute top-4 left-4 z-10 max-h-[calc(100%-7rem)] w-[min(100%-2rem,22rem)] overflow-auto rounded-3xl bg-[#0e1424]/95 p-5 text-white shadow-2xl ring-1 ring-white/10 backdrop-blur lg:max-h-[calc(100%-2rem)]">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs text-slate-400">{trip.bus_label ?? 'Bus'}</p>
@@ -175,16 +197,17 @@ export function TrackingView({
           </p>
         ) : (
           <div className="mt-4">
-            <p className="text-3xl font-semibold tracking-tight">
-              {formatEta(destinationEta?.eta_minutes ?? nextEta?.eta_minutes)}
+            <p className="font-display text-5xl leading-none tracking-tight">
+              {formatEta(headlineEta?.eta_minutes)}
             </p>
             <p className="mt-1 text-sm text-slate-300">
-              {destinationEta
-                ? destinationEta.stop_name
-                : nextEta
-                  ? nextEta.stop_name
-                  : 'Final stop'}
+              {headlineEta ? headlineEta.stop_name : 'Final stop'}
             </p>
+            {boardingEta && destinationEta ? (
+              <p className="mt-2 text-sm text-slate-300">
+                Then {destinationEta.stop_name} · {formatEta(destinationEta.eta_minutes)}
+              </p>
+            ) : null}
             {delay ? <p className="mt-2 text-sm text-amber-300">{delay}</p> : null}
           </div>
         )}
@@ -202,8 +225,8 @@ export function TrackingView({
         <ConnectionNote connection={connection} fetchError={fetchError} />
       </section>
 
-      <aside className="absolute top-3 right-3 z-10 hidden max-h-[calc(100%-1.5rem)] w-72 overflow-auto rounded-xl bg-white shadow-xl ring-1 ring-slate-200 lg:block">
-        <p className="border-b border-slate-100 px-4 py-3 text-sm font-medium">Stops ahead</p>
+      <aside className="absolute top-4 right-4 z-10 hidden max-h-[calc(100%-2rem)] w-80 overflow-auto rounded-3xl bg-white/95 shadow-2xl ring-1 ring-black/5 backdrop-blur lg:block">
+        <p className="border-b border-black/5 px-5 py-4 text-sm font-semibold">Stops ahead</p>
         {upcoming.length === 0 ? (
           <p className="px-4 py-3 text-sm text-slate-500">
             {isFinished ? 'The run is finished.' : 'Approaching the last stop.'}

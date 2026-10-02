@@ -47,6 +47,80 @@ export async function searchRoutes(
   return data ?? [];
 }
 
+export type ApproachingBus = {
+  trip: TripLive;
+  /** Minutes until this bus reaches the passenger's boarding stop. */
+  etaMinutes: number | null;
+};
+
+/**
+ * Buses that have not reached the boarding stop yet, on a route that continues
+ * to the destination. A bus that has already left the boarding stop toward the
+ * destination is left out: the passenger cannot board it there.
+ */
+export async function busesApproaching(
+  originStopId: string,
+  destinationStopId: string,
+): Promise<{ matchedRoute: boolean; buses: ApproachingBus[] }> {
+  const routes = await searchRoutes(originStopId, destinationStopId);
+  if (routes.length === 0) return { matchedRoute: false, buses: [] };
+
+  const supabase = await createClient();
+  const routeIds = [...new Set(routes.map((route) => route.route_id))];
+  const { data: trips, error } = await supabase
+    .from('v_trip_live')
+    .select('*')
+    .in('route_id', routeIds)
+    .in('status', ['in_progress', 'scheduled']);
+
+  if (error) throw new Error(`Could not load buses for this ride: ${error.message}`);
+
+  const byRoute = new Map(routes.map((route) => [`${route.route_id}:${route.direction}`, route]));
+  const candidates = (trips ?? []).filter((trip) => {
+    const route = byRoute.get(`${trip.route_id}:${trip.direction}`);
+    if (!route) return false;
+    return (trip.last_stop_order ?? 0) < route.origin_stop_order;
+  });
+
+  if (candidates.length === 0) return { matchedRoute: true, buses: [] };
+
+  const liveIds = candidates.filter((trip) => trip.status === 'in_progress').map((trip) => trip.trip_id);
+  const scheduledIds = candidates.filter((trip) => trip.status === 'scheduled').map((trip) => trip.trip_id);
+  const etaByTrip = new Map<string, number>();
+
+  if (liveIds.length > 0) {
+    const { data: etas, error: etaError } = await supabase
+      .from('v_trip_stop_eta')
+      .select('trip_id, eta_minutes')
+      .in('trip_id', liveIds)
+      .eq('stop_id', originStopId);
+
+    if (etaError) throw new Error(`Could not load arrival times: ${etaError.message}`);
+    for (const row of etas ?? []) etaByTrip.set(row.trip_id, row.eta_minutes);
+  }
+
+  if (scheduledIds.length > 0) {
+    const { data: times, error: timeError } = await supabase
+      .from('trip_stop_times')
+      .select('trip_id, scheduled_arrival_at')
+      .in('trip_id', scheduledIds)
+      .eq('stop_id', originStopId);
+
+    if (timeError) throw new Error(`Could not load the timetable: ${timeError.message}`);
+    const now = Date.now();
+    for (const row of times ?? []) {
+      const minutes = Math.round((new Date(row.scheduled_arrival_at).getTime() - now) / 60000);
+      etaByTrip.set(row.trip_id, Math.max(minutes, 0));
+    }
+  }
+
+  const buses = candidates
+    .map((trip) => ({ trip, etaMinutes: etaByTrip.get(trip.trip_id) ?? null }))
+    .sort((a, b) => (a.etaMinutes ?? 10_000) - (b.etaMinutes ?? 10_000));
+
+  return { matchedRoute: true, buses };
+}
+
 /**
  * Buses a passenger can choose from when a stop has no direct match, or when
  * the matched route has nothing running. Live trips first, then the soonest
