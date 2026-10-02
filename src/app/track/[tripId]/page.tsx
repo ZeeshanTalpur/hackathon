@@ -15,12 +15,12 @@ export const dynamic = 'force-dynamic';
 
 interface TrackPageProps {
   params: Promise<{ tripId: string }>;
-  searchParams: Promise<{ destination?: string }>;
+  searchParams: Promise<{ destination?: string; boarding?: string }>;
 }
 
 export default async function TrackPage({ params, searchParams }: TrackPageProps) {
   const { tripId } = await params;
-  const { destination } = await searchParams;
+  const { destination, boarding } = await searchParams;
 
   if (!SUPABASE_CONFIGURED) {
     return (
@@ -80,6 +80,7 @@ export default async function TrackPage({ params, searchParams }: TrackPageProps
   return (
     <AppShell bleed title="Live map">
       <TrackingView
+        boardingStopId={boarding ?? null}
         destinationStopId={destination ?? null}
         initialEtas={etas}
         initialTrip={trip}

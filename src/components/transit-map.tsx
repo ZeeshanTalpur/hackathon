@@ -14,6 +14,12 @@ export interface MapBus {
   isLive: boolean;
 }
 
+export interface StopTip {
+  stopId: string;
+  /** Short ETA, or a status such as Passed. */
+  label: string;
+}
+
 interface TransitMapProps {
   path: RoutePathStop[];
   bus: MapBus | null;
@@ -21,6 +27,7 @@ interface TransitMapProps {
   originStopId?: string | null;
   destinationStopId?: string | null;
   nextStopId?: string | null;
+  stopTips?: StopTip[];
   fill?: boolean;
 }
 
@@ -66,6 +73,7 @@ function Overlays({
   originStopId,
   destinationStopId,
   nextStopId,
+  stopTips,
 }: TransitMapProps) {
   const map = useMap();
   const polylineRef = useRef<google.maps.Polyline | null>(null);
@@ -88,15 +96,55 @@ function Overlays({
       map,
     });
 
+    const tipByStop = new globalThis.Map((stopTips ?? []).map((tip) => [tip.stopId, tip.label]));
+    const tip = document.createElement('div');
+    tip.style.position = 'absolute';
+    tip.style.display = 'none';
+    tip.style.pointerEvents = 'none';
+    tip.style.transform = 'translate(-50%, calc(-100% - 12px))';
+    tip.style.background = '#0e1424';
+    tip.style.color = '#ffffff';
+    tip.style.borderRadius = '12px';
+    tip.style.padding = '6px 10px';
+    tip.style.fontSize = '12px';
+    tip.style.lineHeight = '1.25';
+    tip.style.whiteSpace = 'nowrap';
+    tip.style.boxShadow = '0 10px 24px rgba(14,20,36,0.35)';
+    tip.style.border = '1px solid rgba(196,162,101,0.75)';
+    const tipName = document.createElement('div');
+    tipName.style.fontWeight = '600';
+    const tipEta = document.createElement('div');
+    tipEta.style.marginTop = '2px';
+    tipEta.style.color = '#c4a265';
+    tipEta.style.fontWeight = '600';
+    tip.append(tipName, tipEta);
+
+    let tipLatLng: google.maps.LatLng | null = null;
+    const hover = new google.maps.OverlayView();
+    hover.onAdd = function onAdd() {
+      this.getPanes()?.floatPane.appendChild(tip);
+    };
+    hover.draw = function draw() {
+      if (!tipLatLng) return;
+      const point = this.getProjection()?.fromLatLngToDivPixel(tipLatLng);
+      if (!point) return;
+      tip.style.left = `${point.x}px`;
+      tip.style.top = `${point.y}px`;
+    };
+    hover.onRemove = function onRemove() {
+      tip.remove();
+    };
+    hover.setMap(map);
+
+    const listeners: google.maps.MapsEventListener[] = [];
     stopMarkersRef.current.forEach((m) => m.setMap(null));
     stopMarkersRef.current = path.map((stop) => {
       const isEndpoint = stop.stop_id === originStopId || stop.stop_id === destinationStopId;
       const isNext = stop.stop_id === nextStopId;
-
-      return new google.maps.Marker({
-        position: { lat: Number(stop.latitude), lng: Number(stop.longitude) },
+      const position = { lat: Number(stop.latitude), lng: Number(stop.longitude) };
+      const marker = new google.maps.Marker({
+        position,
         map,
-        title: `${stop.stop_order}. ${stop.stop_name}`,
         zIndex: isEndpoint || isNext ? 3 : 1,
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
@@ -107,6 +155,22 @@ function Overlays({
           strokeWeight: 2,
         },
       });
+
+      listeners.push(
+        marker.addListener('mouseover', () => {
+          tipLatLng = marker.getPosition() ?? null;
+          tipName.textContent = stop.stop_name;
+          tipEta.textContent = tipByStop.get(stop.stop_id) ?? '';
+          tip.style.display = 'block';
+          hover.draw();
+        }),
+      );
+      listeners.push(
+        marker.addListener('mouseout', () => {
+          tip.style.display = 'none';
+        }),
+      );
+      return marker;
     });
 
     if (!didFitRef.current) {
@@ -117,11 +181,13 @@ function Overlays({
     }
 
     return () => {
+      listeners.forEach((listener) => listener.remove());
+      hover.setMap(null);
       polylineRef.current?.setMap(null);
       stopMarkersRef.current.forEach((m) => m.setMap(null));
       stopMarkersRef.current = [];
     };
-  }, [map, path, routeColor, originStopId, destinationStopId, nextStopId]);
+  }, [map, path, routeColor, originStopId, destinationStopId, nextStopId, stopTips]);
 
   // Bus marker, moved in place so updates stay cheap.
   useEffect(() => {

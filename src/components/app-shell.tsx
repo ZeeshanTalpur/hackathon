@@ -1,7 +1,10 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
+import { NotificationBell } from '@/components/notification-bell';
 import { SideNav } from '@/components/side-nav';
+
+export { DemoDataNotice, EmptyState, ErrorState, LoadingState } from '@/components/states';
 
 export function AppShell({
   title,
@@ -14,29 +17,30 @@ export function AppShell({
   children: ReactNode;
 }) {
   return (
-    <div className={`flex bg-[#f4f6f9] text-slate-900 ${bleed ? 'h-dvh overflow-hidden' : 'min-h-screen'}`}>
-      <aside className="sticky top-0 hidden h-screen w-56 shrink-0 flex-col border-r border-slate-200 bg-white px-3 py-5 md:flex">
-        <Link className="px-3 text-sm font-semibold tracking-tight text-slate-900" href="/">
-          Daily Transit
+    <div className={`flex bg-[#f3efe6] text-[#141820] ${bleed ? 'h-dvh overflow-hidden' : 'min-h-screen'}`}>
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-[#0e1424] px-4 py-6 text-white md:flex">
+        <Link className="px-2" href="/">
+          <span className="font-display block text-2xl leading-none tracking-tight">Daily</span>
+          <span className="mt-1 block text-[11px] font-medium tracking-[0.28em] text-[#c4a265] uppercase">Transit</span>
         </Link>
-        <p className="mt-1 px-3 text-xs text-slate-400">City buses, live</p>
-        <div className="mt-6">
-          <SideNav />
+        <div className="mt-8">
+          <SideNav tone="dark" />
         </div>
-        <p className="mt-auto px-3 text-[11px] leading-relaxed text-slate-400">
+        <p className="mt-auto px-2 text-[11px] leading-relaxed text-white/40">
           Demonstration timetable. Not an official city service.
         </p>
       </aside>
 
       <div className={`flex min-w-0 flex-1 flex-col ${bleed ? 'min-h-0' : ''}`}>
-        <header className="border-b border-slate-200 bg-white">
-          <div className="px-4 py-3 md:px-6">
-            <p className="text-[11px] font-semibold tracking-[0.16em] text-slate-400 uppercase md:hidden">
-              Daily Transit
-            </p>
-            <h1 className="truncate text-lg font-semibold tracking-tight md:text-xl">{title}</h1>
+        <header className="relative z-30 border-b border-black/5 bg-[#f3efe6]/90 backdrop-blur">
+          <div className="flex items-center justify-between gap-3 px-4 py-3 md:px-8">
+            <div className="min-w-0">
+              <p className="font-display text-lg leading-none md:hidden">Daily Transit</p>
+              <h1 className="truncate text-lg font-semibold tracking-tight md:text-2xl">{title}</h1>
+            </div>
+            <NotificationBell />
           </div>
-          <div className="border-t border-slate-100 px-3 py-2 md:hidden">
+          <div className="px-3 pb-3 md:hidden">
             <SideNav mobile />
           </div>
         </header>
@@ -52,32 +56,4 @@ export function AppShell({
       </div>
     </div>
   );
-}
-
-export function ErrorState({ title, detail }: { title: string; detail?: string }) {
-  return (
-    <div className="rounded-xl border border-red-200 bg-white p-4 text-sm">
-      <p className="font-medium text-red-800">{title}</p>
-      {detail ? <p className="mt-1 text-slate-600">{detail}</p> : null}
-    </div>
-  );
-}
-
-export function EmptyState({ title, detail }: { title: string; detail?: string }) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm">
-      <p className="font-medium">{title}</p>
-      {detail ? <p className="mt-1 text-slate-500">{detail}</p> : null}
-    </div>
-  );
-}
-
-export function LoadingState({ label = 'Loading' }: { label?: string }) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-500">{label}…</div>
-  );
-}
-
-export function DemoDataNotice() {
-  return null;
 }

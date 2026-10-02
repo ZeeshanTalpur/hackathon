@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
-import { DM_Sans } from "next/font/google";
+import { DM_Sans, Fraunces } from "next/font/google";
 import "./globals.css";
 
 const sans = DM_Sans({
   subsets: ["latin"],
   variable: "--font-sans",
+});
+
+const display = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-display",
 });
 
 export const metadata: Metadata = {
@@ -14,8 +19,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${sans.variable} h-full`}>
-      <body className={`${sans.className} min-h-full bg-[#f4f6f9] text-slate-900 antialiased`}>
+    <html lang="en" className={`${sans.variable} ${display.variable} h-full`}>
+      <body className={`${sans.className} min-h-full bg-[#f3efe6] text-[#141820] antialiased`}>
         {children}
       </body>
     </html>
